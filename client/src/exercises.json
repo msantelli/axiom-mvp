@@ -1,0 +1,43 @@
+[
+  {
+    "id": "demo-01",
+    "title": "Intro MP: A, (A->B) \u22a2 B",
+    "goal": "B",
+    "given": [
+      "A",
+      "(A->B)"
+    ],
+    "allowed": {
+      "axioms": [
+        1,
+        2,
+        3
+      ],
+      "rules": [
+        "MP"
+      ]
+    },
+    "hints": [
+      "Si ten\u00e9s A y (A->B), aplic\u00e1 MP para concluir B."
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "ax-01",
+    "title": "Axioma 1",
+    "goal": "A->(B->A)",
+    "given": [],
+    "allowed": {
+      "axioms": [
+        1
+      ],
+      "rules": [
+        "MP"
+      ]
+    },
+    "hints": [
+      "Reconoc\u00e9 que es una instancia directa de A1 con \u03b1:=A y \u03b2:=B."
+    ],
+    "difficulty": 1
+  }
+]
