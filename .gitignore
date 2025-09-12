@@ -61,6 +61,9 @@ coverage/
 CLAUDE.md
 STATUS.md
 
+# Research materials (not needed by other developers)
+research/
+
 # Package manager lock files (optional - uncomment if you don't want to track them)
 # package-lock.json
 # yarn.lock
