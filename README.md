@@ -23,7 +23,7 @@ Abrí http://localhost:5173
 - Elegí un ejercicio (arriba a la izquierda). Los **Dados** se muestran como líneas 1..n.
 - Elegí una **regla** (MP, MT, HS, ADJ, SIMP, DS), luego hacé click en las líneas que requiere. Confirmá “Agregar línea”.
 - Cada línea queda registrada con su **regla** y **referencias**. El botón **Verificar** chequea todos los pasos.
-- Teclado: M (MP), T (MT), H (HS), A (ADJ), S (SIMP), D (DS), 1/2/3 (instanciar A1–A3), Enter (agregar), Esc (cancelar), Ctrl/Cmd+Z / +Y (Deshacer/Rehacer).
+- Teclado: M (MP), T (MT), H (SH), A (ADJ), S (SIMP), D (DS), 1/2/3 (instanciar A1–A3), Enter (agregar), Esc (cancelar), Ctrl/Cmd+Z / +Y (Deshacer/Rehacer).
 - **ASCII/Unicode**: alterná ~/¬, ^/∧, v/∨, <->/↔.
 - **Contradicción**: para ejercicios de inconsistencia (Guía 6), activá “Contradicción”. El verificador confirma cuando hay X y ¬X (o X∧¬X) y te dice **en qué líneas**.
 - **Axiomas A1–A3**: instanciá α, β, γ con previsualización.

@@ -207,6 +207,7 @@ export type Just =
   | { kind: 'ADJ', left: number, right: number }
   | { kind: 'SIMP', from: number, pick: 'left'|'right' }
   | { kind: 'DS', disj: number, not: number }
+  | { kind: 'IFF', from: number, dir: 'LtoR'|'RtoL' }
 
 export type Step = { line: number, formula: string, just: Just }
 export type CheckResult = { ok: boolean, errors: { line: number, msg: string }[] }
@@ -277,6 +278,16 @@ export function checkProof(steps: Step[], goal: string, given: string[] = []): C
           if (!equalF(f, disj.left)){ errors.push({line:s.line, msg:`La conclusión debería ser ${show(disj.left)}`}); parsed.push(f); continue }
         }else{
           errors.push({line:s.line, msg:`La negación no coincide con ningún disyunto`}); parsed.push(f); continue
+        }
+      }else if (s.just.kind==='IFF'){
+        const bic = getFormulaAt(s.just.from)
+        if (!bic){ errors.push({line:s.line, msg:"Referencia de línea inválida"}); parsed.push(f); continue }
+        if (bic.kind!=='iff'){ errors.push({line:s.line, msg:`La línea ${s.just.from} no es una bicondicional`}); parsed.push(f); continue }
+        const expect: F = s.just.dir==='LtoR'
+          ? { kind:'imp', left: bic.left, right: bic.right }
+          : { kind:'imp', left: bic.right, right: bic.left }
+        if (!equalF(expect, f)){
+          errors.push({line:s.line, msg:`La conclusión debería ser ${show(expect)}`}); parsed.push(f); continue
         }
       }
       parsed.push(f)

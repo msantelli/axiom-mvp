@@ -3,7 +3,7 @@ import exercisesData from '../exercises.json'
 import { parse, show, equalF, checkProof, instantiate, AXIOMS, type F, type Step, type Just } from '../lib/logic'
 import { entails, isTautology, truthTable } from '../lib/semantics'
 
-type Rule = 'MP'|'MT'|'HS'|'ADJ'|'SIMP'|'DS'|'AX1'|'AX2'|'AX3'
+type Rule = 'MP'|'MT'|'HS'|'ADJ'|'SIMP'|'DS'|'IFF'|'AX1'|'AX2'|'AX3'
 
 export default function ProofEditor(){
   const [exIdx, setExIdx] = useState(0)
@@ -19,6 +19,7 @@ export default function ProofEditor(){
   const [activeRule, setActiveRule] = useState<Rule|null>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [simpPick, setSimpPick] = useState<'left'|'right'>('left')
+  const [iffDir, setIffDir] = useState<'LtoR'|'RtoL'>('LtoR')
   const [ascii, setAscii] = useState<boolean>(false)
   const [message, setMessage] = useState<string>('Seleccioná una regla y luego las líneas referenciadas')
   const [hoverLine, setHoverLine] = useState<number|null>(null)
@@ -34,10 +35,13 @@ export default function ProofEditor(){
 
   const allLines = useMemo(()=>{
     const lines: { idx:number, formula:string, tag:string }[] = []
-    given.forEach((g, i)=> lines.push({ idx: i+1, formula: g, tag: 'Given' }))
+    // Determinar si son axiomas o premisas según el contexto del ejercicio
+    const givenLabel = (ex as any).givenLabel ?? (given.length === 0 ? 'Axioma' : 
+      ex.title.includes('Axioma') || ex.title.includes('A1') || ex.title.includes('A2') || ex.title.includes('A3') ? 'Axioma' : 'Premisa')
+    given.forEach((g, i)=> lines.push({ idx: i+1, formula: g, tag: givenLabel }))
     steps.forEach((s, j)=> lines.push({ idx: given.length + j + 1, formula: s.formula, tag: justToTag(s.just) }))
     return lines
-  }, [given, steps])
+  }, [given, steps, ex])
 
   useEffect(()=>{
     // Default contradiction mode per exercise setting, if present
@@ -92,10 +96,12 @@ export default function ProofEditor(){
       case 'AX': return `A${j.axiom}`
       case 'MP': return `MP ${j.from},${j.impliesFrom}`
       case 'MT': return `MT ${j.imp},${j.not}`
-      case 'HS': return `HS ${j.left},${j.right}`
+      case 'HS': return `SH ${j.left},${j.right}`
       case 'ADJ': return `ADJ ${j.left},${j.right}`
       case 'SIMP': return `SIMP ${j.from}.${j.pick==='left'?'L':'R'}`
       case 'DS': return `DS ${j.disj},${j.not}`
+      case 'IFF': return `↔E ${j.from}.${j.dir==='LtoR'?'→':'←'}`
+      default: return '—'
     }
   }
 
@@ -133,12 +139,13 @@ export default function ProofEditor(){
 
   function instructionFor(rule: Rule): string {
     switch(rule){
-      case 'MP': return 'MP: seleccioná dos líneas: X y (X->Y)'
-      case 'MT': return 'MT: seleccioná dos líneas: (X->Y) y ¬Y'
-      case 'HS': return 'HS: seleccioná dos líneas: (X->Y) y (Y->Z)'
-      case 'ADJ': return 'ADJ: seleccioná dos líneas: X y Y'
-      case 'SIMP': return 'SIMP: seleccioná una conjunción X∧Y y elegí lado'
-      case 'DS': return 'DS: seleccioná dos líneas: (X∨Y) y ¬X o ¬Y'
+      case 'MP': return 'Modus Ponens: seleccioná dos líneas: X y (X→Y)'
+      case 'MT': return 'Modus Tollens: seleccioná dos líneas: (X→Y) y ¬Y'
+      case 'HS': return 'Silogismo hipotético: seleccioná dos líneas: (X→Y) y (Y→Z)'
+      case 'ADJ': return 'Adjunción: seleccioná dos líneas: X y Y'
+      case 'SIMP': return 'Simplificación: seleccioná una conjunción X∧Y y elegí lado'
+      case 'DS': return 'Silogismo disyuntivo: seleccioná dos líneas: (X∨Y) y ¬X o ¬Y'
+      case 'IFF': return '↔ Eliminación: seleccioná una bicondicional X↔Y y elegí dirección'
       default: return 'Seleccioná una regla'
     }
   }
@@ -162,6 +169,7 @@ export default function ProofEditor(){
       case 'ADJ': return [j.left, j.right]
       case 'SIMP': return [j.from]
       case 'DS': return [j.disj, j.not]
+      case 'IFF': return [j.from]
     }
   }
 
@@ -245,6 +253,14 @@ export default function ProofEditor(){
           if (equalF(F1.inner, F2.right)) return { formula: show(F2.left), just: { kind:'DS', disj: i2, not: i1 } }
         }
         return { error: 'Selección inválida para DS' }
+      }
+      if (activeRule==='IFF'){
+        if (selected.length!==1) return { error: '↔ Eliminación requiere una sola bicondicional' }
+        const [i1] = selected
+        const F1 = getF(i1)
+        if (F1.kind!=='iff') return { error: 'La línea seleccionada no es una bicondicional' }
+        const imp = iffDir==='LtoR' ? {kind:'imp', left: F1.left, right: F1.right as F} : {kind:'imp', left: F1.right, right: F1.left as F}
+        return { formula: show(imp as any), just: { kind:'IFF', from: i1, dir: iffDir } as any }
       }
       return { error: 'Regla no implementada aún' }
     }catch(e:any){
@@ -429,13 +445,26 @@ export default function ProofEditor(){
             </div>
           ))}
         </div>
-        {activeRule==='SIMP' && (
+        {(activeRule==='SIMP' || activeRule==='IFF') && (
           <div style={{marginTop:8}}>
-            <label>Proyección: </label>
-            <select value={simpPick} onChange={e=>setSimpPick(e.target.value as any)}>
-              <option value='left'>Izquierda</option>
-              <option value='right'>Derecha</option>
-            </select>
+            {activeRule==='SIMP' && (
+              <>
+                <label>Proyección: </label>
+                <select value={simpPick} onChange={e=>setSimpPick(e.target.value as any)}>
+                  <option value='left'>Izquierda</option>
+                  <option value='right'>Derecha</option>
+                </select>
+              </>
+            )}
+            {activeRule==='IFF' && (
+              <>
+                <label>Dirección: </label>
+                <select value={iffDir} onChange={e=>setIffDir(e.target.value as any)}>
+                  <option value='LtoR'>X→Y</option>
+                  <option value='RtoL'>Y→X</option>
+                </select>
+              </>
+            )}
           </div>
         )}
         <div style={{marginTop:8, display:'flex', gap:8}}>
@@ -446,19 +475,20 @@ export default function ProofEditor(){
       <div>
         <h3>Reglas</h3>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6}}>
-          {(['MP','MT','HS','ADJ','SIMP','DS'] as Rule[]).map(r=> (
-            <button key={r}
-                    disabled={!allowedRules.includes(r as any)}
-                    onClick={()=> onPickRule(r)}
-                    style={{padding:'6px 8px', border: activeRule===r? '2px solid #1976d2':'1px solid #ccc', borderRadius:6, background: activeRule===r? '#e3f2fd':'#fff'}}>
-              {r}
+          {[{rule:'MP', label:'MP'},{rule:'MT', label:'MT'},{rule:'HS', label:'SH'},{rule:'ADJ', label:'ADJ'},{rule:'SIMP', label:'SIMP'},{rule:'DS', label:'DS'},{rule:'IFF', label:'↔E'}].map(({rule,label})=> (
+            <button key={rule}
+                    disabled={!allowedRules.includes(rule as any)}
+                    onClick={()=> onPickRule(rule as Rule)}
+                    title={instructionFor(rule as Rule)}
+                    style={{padding:'6px 8px', border: activeRule===rule? '2px solid #1976d2':'1px solid #ccc', borderRadius:6, background: activeRule===rule? '#e3f2fd':'#fff', fontSize:11}}>
+              {label}
             </button>
           ))}
         </div>
         <h4 style={{marginTop:12}}>Axiomas</h4>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6}}>
           {[1,2,3].map(n=> (
-            <button key={n} disabled={!allowedAxioms.includes(n as any)} onClick={()=> onPickRule(('AX'+n) as Rule)}>
+            <button key={n} disabled={!allowedAxioms.includes(n as any)} onClick={()=> onPickRule(('AX'+n) as Rule)} style={{fontSize:11}}>
               A{n}
             </button>
           ))}
@@ -485,16 +515,29 @@ export default function ProofEditor(){
             </div>
           </div>
         )}
-        <div style={{marginTop:12, fontSize:12, opacity:.8}}>
-          <div><b>MP:</b> X→Y, X ⟹ Y</div>
-          <div><b>MT:</b> X→Y, ¬Y ⟹ ¬X</div>
-          <div><b>HS:</b> X→Y, Y→Z ⟹ X→Z</div>
-          <div><b>ADJ:</b> X, Y ⟹ X∧Y</div>
-          <div><b>SIMP:</b> X∧Y ⟹ X | Y</div>
-          <div><b>DS:</b> X∨Y, ¬X ⟹ Y (o simétrico)</div>
+        <div style={{marginTop:12}}>
+          <button 
+            onClick={()=> setExplainLine(-1)} 
+            style={{marginBottom:8, padding:'4px 8px', fontSize:11, cursor:'pointer'}}
+            title="Ver definiciones de axioma y teorema"
+          >
+            📖 Definiciones
+          </button>
+          <div style={{fontSize:12, opacity:.8}}>
+            <div><b>Modus Ponens:</b> X→Y, X ⟹ Y</div>
+            <div><b>Modus Tollens:</b> X→Y, ¬Y ⟹ ¬X</div>
+            <div><b>Silogismo hipotético:</b> X→Y, Y→Z ⟹ X→Z</div>
+            <div><b>Adjunción:</b> X, Y ⟹ X∧Y</div>
+            <div><b>Simplificación:</b> X∧Y ⟹ X | Y</div>
+            <div><b>Silogismo disyuntivo:</b> X∨Y, ¬X ⟹ Y (o simétrico)</div>
+            <div><b>↔ Eliminación:</b> X↔Y ⟹ (X→Y) | (Y→X)</div>
+          </div>
         </div>
       </div>
-      {explainLine && (
+      {explainLine === -1 && (
+        <DefinitionsModal onClose={()=> setExplainLine(null)} />
+      )}
+      {explainLine && explainLine > 0 && (
         <SemanticsModal
           ascii={ascii}
           lineIdx={explainLine}
@@ -544,6 +587,7 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
       case 'ADJ': return { name:'Adjunción', schema: '(X ^ Y) -> (X ^ Y)' }
       case 'SIMP': return { name:'Simplificación', schema: '(X ^ Y) -> X' }
       case 'DS': return { name:'Silogismo disyuntivo', schema: '((X v Y) ^ ¬X) -> Y' }
+      case 'IFF': return { name:'↔ Eliminación', schema: '((X <-> Y) -> (X -> Y))' }
       case 'AX': return { name:`Axioma A${j.axiom}`, schema: 'Instancia de esquema axiomático' }
     }
   }
@@ -605,6 +649,61 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
               )}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DefinitionsModal({onClose}:{onClose: ()=>void}){
+  return (
+    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
+      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)', maxHeight:'80vh', overflow:'auto'}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <h3 style={{margin:0}}>Definiciones — Guía 6</h3>
+          <button onClick={onClose}>Cerrar</button>
+        </div>
+        <div style={{marginTop:12, lineHeight:1.45}}>
+          <div style={{marginBottom:16}}>
+            <h4 style={{margin:'0 0 8px 0', color:'#1976d2'}}>Axiomas</h4>
+            <p style={{margin:'0 0 8px 0'}}>
+              Los <strong>axiomas</strong> son principios fundacionales que se aceptan como 
+              verdades evidentes sobre algún dominio. Constituyen las premisas básicas 
+              de un sistema axiomático.
+            </p>
+            <p style={{margin:0, opacity:.8, fontSize:13}}>
+              <em>Ejemplos:</em> los cinco axiomas de Euclides para la geometría, 
+              o los axiomas de Peano para los números naturales.
+            </p>
+          </div>
+          <div style={{marginBottom:16}}>
+            <h4 style={{margin:'0 0 8px 0', color:'#1976d2'}}>Teoremas</h4>
+            <p style={{margin:'0 0 8px 0'}}>
+              Los <strong>teoremas</strong> son otras verdades sobre el dominio que se 
+              infieren deductivamente a partir de los axiomas mediante reglas de inferencia. 
+              A su vez, estos teoremas pueden tratarse como premisas en nuevos argumentos 
+              destinados a deducir válidamente nuevos teoremas.
+            </p>
+            <p style={{margin:0, opacity:.8, fontSize:13}}>
+              <em>Ejemplo:</em> del axioma 3 de Peano se puede deducir el teorema 
+              "el cero no tiene antecesor en ℕ".
+            </p>
+          </div>
+          <div>
+            <h4 style={{margin:'0 0 8px 0', color:'#1976d2'}}>Reglas de Inferencia</h4>
+            <p style={{margin:'0 0 8px 0'}}>
+              Las <strong>reglas de inferencia</strong> son patrones válidos de razonamiento 
+              deductivo que permiten derivar nuevas conclusiones a partir de premisas conocidas.
+            </p>
+            <div style={{fontSize:12, fontFamily:'monospace', background:'#f5f5f5', padding:8, borderRadius:4}}>
+              <div><strong>Modus Ponens:</strong> X → Y, X ⟹ Y</div>
+              <div><strong>Modus Tollens:</strong> X → Y, ¬Y ⟹ ¬X</div>
+              <div><strong>Silogismo hipotético:</strong> X → Y, Y → Z ⟹ X → Z</div>
+              <div><strong>Adjunción:</strong> X, Y ⟹ X ∧ Y</div>
+              <div><strong>Simplificación:</strong> X ∧ Y ⟹ X, Y</div>
+              <div><strong>Silogismo disyuntivo:</strong> X ∨ Y, ¬X ⟹ Y</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
