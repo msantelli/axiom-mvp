@@ -1,0 +1,48 @@
+:root{
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #1976d2;
+  --accent-100: #e3f2fd;
+  --accent-200: #bbdefb;
+  --success-100: #e8f5e9;
+  --warning-100: #fff8e1;
+}
+
+html, body, #root { height: 100%; }
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+h1,h2,h3 { color: var(--text); }
+p { color: var(--muted); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button{
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+button:hover{ background: var(--accent-100); border-color: var(--accent-200); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+button:disabled{ opacity: .55; cursor: not-allowed; }
+
+hr{ border: none; height: 1px; background: var(--border); }
+
+details summary { cursor: pointer; }
+pre { background: #0b1020; color: #e5e7eb; padding: 10px; border-radius: 8px; overflow: auto; }
+
+.app-container{ background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,.06); border: 1px solid var(--border); border-radius: 12px; }
+.banner{ background: #f8fafc; border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; color: #1e293b; }
+.line-card{ box-shadow: 0 1px 2px rgba(0,0,0,.04); border: 1px solid var(--border); border-radius: 8px; }
+

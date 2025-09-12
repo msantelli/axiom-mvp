@@ -3,6 +3,9 @@
 venv/
 env/
 
+# Extra
+research/
+
 # Dependencies
 node_modules/
 client/node_modules/
