@@ -392,7 +392,7 @@ export default function ProofEditor(){
           <button onClick={()=> copyProof()} disabled={allLines.length===0}>Copiar texto</button>
           <button onClick={reset}>Reiniciar</button>
         </header>
-        <div style={{margin:'8px 0', padding:8, border:'1px dashed #999', borderRadius:8}}>{message}</div>
+        <div className="banner" style={{margin:'8px 0', padding:10}}>{message}</div>
         {(!goalIsContradiction && goal && goal.trim()!=='') && (
           <div style={{marginBottom:8}}>
             <b>Meta:</b> {display(goal)} {ex.hints && ex.hints.length>0 && <span style={{opacity:.7}}> • Pista: {ex.hints[0]}</span>}
@@ -409,10 +409,10 @@ export default function ProofEditor(){
                  onMouseEnter={()=>{ setHoverLine(l.idx); setHoverRefs(refsForLine(l.idx)) }}
                  onMouseLeave={()=>{ setHoverLine(null); setHoverRefs([]) }}
                  style={{
-                   display:'grid', gridTemplateColumns:'40px 1fr 120px', gap:8, padding:'6px 8px', margin:'4px 0',
-                   border:'1px solid #ddd', borderRadius:6,
-                   background: (selected.includes(l.idx) ? '#eef7ff' : (hoverLine===l.idx ? '#fffbe6' : (hoverRefs.includes(l.idx) ? '#f0fff4' : '#fff'))),
-                   outline: hoverRefs.includes(l.idx) ? '2px solid #81c784' : undefined,
+                   display:'grid', gridTemplateColumns:'40px 1fr 120px', gap:8, padding:'8px 10px', margin:'6px 0',
+                   border:'1px solid #e2e8f0', borderRadius:8, boxShadow:'0 1px 2px rgba(0,0,0,.04)',
+                   background: (selected.includes(l.idx) ? '#e3f2fd' : (hoverLine===l.idx ? '#fff8e1' : (hoverRefs.includes(l.idx) ? '#e8f5e9' : '#fff'))),
+                   outline: hoverRefs.includes(l.idx) ? '2px solid #a5d6a7' : undefined,
                    cursor: activeRule? 'pointer':'default'
                  }}>
               <div style={{opacity:.7}}>{l.idx}.</div>

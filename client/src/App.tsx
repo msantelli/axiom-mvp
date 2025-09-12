@@ -5,7 +5,7 @@ import exercises from './exercises.json'
 export default function App(){
   const [aboutOpen, setAboutOpen] = useState(false)
   return (
-    <div style={{maxWidth:1000, margin:'0 auto', padding:16}}>
+    <div className="app-container" style={{maxWidth:1000, margin:'24px auto', padding:16}}>
       <header style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
         <h1 style={{margin:0}}>Sistemas Axiomáticos: Introducción a la ciencia - C094 - C095</h1>
         <div style={{display:'flex', alignItems:'center', gap:8}}>
