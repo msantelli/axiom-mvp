@@ -23,6 +23,81 @@
     "difficulty": 1
   },
   {
+    "id": "g6-23-1",
+    "title": "Guía 6 · 23.1: P→Q, Q→R, R→S, P ⊢ S",
+    "goal": "S",
+    "given": ["P->Q","Q->R","R->S","P"],
+    "allowed": { "axioms": [], "rules": ["HS","MP"] },
+    "hints": ["Encadená implicaciones con HS y cerrá con MP"],
+    "difficulty": 2
+  },
+  {
+    "id": "g6-23-2a",
+    "title": "Guía 6 · 23.2a: A∧B, B→C, A→B, C→D ⊢ C",
+    "goal": "C",
+    "given": ["A^B","B->C","A->B","C->D"],
+    "allowed": { "axioms": [], "rules": ["SIMP","MP"] },
+    "hints": ["Simplificá A∧B para obtener B y aplicá MP"],
+    "difficulty": 2
+  },
+  {
+    "id": "g6-23-2b",
+    "title": "Guía 6 · 23.2b: A∧B, B→C, A→B, C→D ⊢ A∧C",
+    "goal": "A^C",
+    "given": ["A^B","B->C","A->B","C->D"],
+    "allowed": { "axioms": [], "rules": ["SIMP","MP","ADJ"] },
+    "hints": ["Obtené A por SIMP, C por MP, y adjuntá"],
+    "difficulty": 3
+  },
+  {
+    "id": "g6-23-2c",
+    "title": "Guía 6 · 23.2c: A∧B, B→C, A→B, C→D ⊢ D",
+    "goal": "D",
+    "given": ["A^B","B->C","A->B","C->D"],
+    "allowed": { "axioms": [], "rules": ["SIMP","MP"] },
+    "hints": ["De B obtené C; de C, D"],
+    "difficulty": 2
+  },
+  {
+    "id": "g6-23-3",
+    "title": "Guía 6 · 23.3: A∨B, ¬A, B→C, D ⊢ C",
+    "goal": "C",
+    "given": ["A v B","~A","B->C","D"],
+    "allowed": { "axioms": [], "rules": ["DS","MP"] },
+    "hints": ["Usá DS para B y luego MP"],
+    "difficulty": 2
+  },
+  {
+    "id": "g6-24-1",
+    "title": "Guía 6 · 24.1: Inconsistencia (derivar contradicción)",
+    "goal": "",
+    "goalMode": "contradiction",
+    "given": ["A v B","B->C","~A","~C"],
+    "allowed": { "axioms": [], "rules": ["DS","MP"] },
+    "hints": ["Derivá B por DS y luego C por MP; contradecí con ~C"],
+    "difficulty": 2
+  },
+  {
+    "id": "g6-24-2",
+    "title": "Guía 6 · 24.2: Inconsistencia (derivar contradicción)",
+    "goal": "",
+    "goalMode": "contradiction",
+    "given": ["P^Q","P->R","~R"],
+    "allowed": { "axioms": [], "rules": ["SIMP","MP"] },
+    "hints": ["Obtené P por SIMP, luego R por MP, contradicción con ~R"],
+    "difficulty": 2
+  },
+  {
+    "id": "g6-24-3",
+    "title": "Guía 6 · 24.3: Inconsistencia (derivar contradicción)",
+    "goal": "",
+    "goalMode": "contradiction",
+    "given": ["W <-> Z","Z","W->R","~R"],
+    "allowed": { "axioms": [], "rules": ["MP","HS"] },
+    "hints": ["De Z y W↔Z inferí W; luego R; contradicción con ~R"],
+    "difficulty": 3
+  },
+  {
     "id": "ax-01",
     "title": "Axioma 1",
     "goal": "A->(B->A)",
