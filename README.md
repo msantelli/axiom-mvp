@@ -1,8 +1,10 @@
 # Sistemas Axiomáticos — MVP (Netlify-ready)
 
-**Objetivo**: práctica guiada de demostraciones en un sistema axiomático tipo Hilbert (A1–A3 + MP), con un **constructor drag & drop** para aplicar MP y un verificador de líneas básico.
+Repositorio: https://github.com/msantelli/axiom-mvp
 
-## Rápido inicio
+Práctica guiada de demostraciones con un **editor de líneas** (estilo papel) para sistemas axiomáticos. Enfatiza reglas explícitas, referencias, y verificaciones automáticas.
+
+## Inicio rápido
 ```bash
 cd client
 npm ci
@@ -17,18 +19,30 @@ Abrí http://localhost:5173
 - Publish dir: `client/dist`
 - Asegurate de tener `public/_redirects` para SPA.
 
+## ¿Cómo usar el editor de líneas?
+- Elegí un ejercicio (arriba a la izquierda). Los **Dados** se muestran como líneas 1..n.
+- Elegí una **regla** (MP, MT, HS, ADJ, SIMP, DS), luego hacé click en las líneas que requiere. Confirmá “Agregar línea”.
+- Cada línea queda registrada con su **regla** y **referencias**. El botón **Verificar** chequea todos los pasos.
+- Teclado: M (MP), T (MT), H (HS), A (ADJ), S (SIMP), D (DS), 1/2/3 (instanciar A1–A3), Enter (agregar), Esc (cancelar), Ctrl/Cmd+Z / +Y (Deshacer/Rehacer).
+- **ASCII/Unicode**: alterná ~/¬, ^/∧, v/∨, <->/↔.
+- **Contradicción**: para ejercicios de inconsistencia (Guía 6), activá “Contradicción”. El verificador confirma cuando hay X y ¬X (o X∧¬X) y te dice **en qué líneas**.
+- **Axiomas A1–A3**: instanciá α, β, γ con previsualización.
+- **Semántica (opt-in)**: activá “Semántica” y tocá ∵ en una línea para ver la **tautología del esquema** (pequeña verdad‑tabla) y si tus **premisas implican** la conclusión (contraejemplo si no).
+- **Deshacer/Rehacer**, **Borrar última**, **Copiar texto** (portapapeles con líneas numeradas y justificaciones).
+
 ## Estructura
-- `client/src/lib/logic.ts`: parser, axiomas y verificador (A1–A3 + MP).
-- `client/src/components/DragProof.tsx`: UI drag & drop (HTML5 nativo) para aplicar MP.
-- `client/src/exercises.json`: ejemplos de ejercicios (puede crecer).
+- `client/src/lib/logic.ts`: parser (¬, ∧, ∨, ↔, ->), axiomas A1–A3, reglas (MP, MT, HS, ADJ, SIMP, DS), verificador.
+- `client/src/lib/semantics.ts`: verdad‑tablas, tautologías y chequeo de implicación (para ayudas ∵).
+- `client/src/components/ProofEditor.tsx`: editor de líneas, reglas, axiomas, ayudas ∵, inconsistencia.
+- `client/src/exercises.json`: banco de ejercicios (incluye Guía 6 y modo “contradicción”).
 - `netlify.toml`: config de build listo para usar.
 
-## Próximos pasos
-- Agregar reconocimiento explícito de instancias de axiomas (actividad de selección).
-- Agregar reglas adicionales (∧, ∨, etc.) y natural deduction como modo alternativo.
-- Integración opcional con [ariroffe/logics](https://github.com/ariroffe/logics) para validación semántica/contraejemplos.
-- Persistir intentos en LocalStorage y exportar en JSON.
-- Mejorar drag & drop con react-dnd y panel de justificaciones.
-
 ## Nota didáctica
-Este MVP enfatiza la **transición entre líneas** via **reglas de inferencia** (MP) y **reconocimiento de esquemas** (A1–A3), que son la base para escalar a demostraciones más complejas.
+El editor busca **alinear la experiencia con las demostraciones en papel**: líneas numeradas, reglas explícitas, referencias claras y verificación incremental. Las ayudas ∵ conectan con la intuición de las **tablas de verdad** sin distraer del método axiomático.
+
+## Atribución
+- Autor: Mauro Santelli (UBA - IIF-SADAF[CONICET] - UDESA).
+- App para uso de la materia Introducción a la ciencia (C094 y C095).
+- Profesores de Magistrales: Sergio Barberis, Aníbal Szapiro, Mauro Santelli, Tomás Balmaceda, Andrea Melamed, Nicolás Serrano.
+- Profesores de tutoriales: Maximiliano Zeller, Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky.
+- Diseñada y prototipada con OpenAI Codex y Claude Code.

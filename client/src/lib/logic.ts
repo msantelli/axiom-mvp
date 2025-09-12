@@ -64,8 +64,8 @@ export function parse(input: string): F {
   }
   function parseAtom(): F {
     if (peek()==='('){ eat('('); const f = parseFormula(); eat(')'); return f }
-    // Accept Latin uppercase and Greek letters in identifiers
-    const m = /^[A-Z\u03B1-\u03C9][A-Za-z0-9_\u03B1-\u03C9]*/.exec(s.slice(i))
+    // Accept Latin uppercase first char (A..Z) and Greek letters; tail excludes lowercase Latin to avoid merging 'A v B' -> 'AvB'
+    const m = /^[A-Z\u03B1-\u03C9][A-Z0-9_\u03B1-\u03C9]*/.exec(s.slice(i))
     if (!m) throw new Error(`Variable inválida en pos ${i}`)
     i += m[0].length
     return {kind:'var', name:m[0]}

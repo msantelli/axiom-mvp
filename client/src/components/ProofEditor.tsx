@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import exercisesData from '../exercises.json'
 import { parse, show, equalF, checkProof, instantiate, AXIOMS, type F, type Step, type Just } from '../lib/logic'
+import { entails, isTautology, truthTable } from '../lib/semantics'
 
 type Rule = 'MP'|'MT'|'HS'|'ADJ'|'SIMP'|'DS'|'AX1'|'AX2'|'AX3'
 
@@ -22,11 +23,14 @@ export default function ProofEditor(){
   const [message, setMessage] = useState<string>('Seleccioná una regla y luego las líneas referenciadas')
   const [hoverLine, setHoverLine] = useState<number|null>(null)
   const [hoverRefs, setHoverRefs] = useState<number[]>([])
-  const [goalIsContradiction, setGoalIsContradiction] = useState<boolean>(false)
+  const [goalIsContradiction, setGoalIsContradiction] = useState<boolean>((ex as any).goalMode === 'contradiction')
   const [axOpen, setAxOpen] = useState<{n:1|2|3}|null>(null)
   const [axAlpha, setAxAlpha] = useState('A')
   const [axBeta, setAxBeta] = useState('B')
   const [axGamma, setAxGamma] = useState('C')
+  const [semanticsOn, setSemanticsOn] = useState<boolean>(false)
+  const [explainLine, setExplainLine] = useState<number|null>(null)
+  const exId = ex.id
 
   const allLines = useMemo(()=>{
     const lines: { idx:number, formula:string, tag:string }[] = []
@@ -38,7 +42,50 @@ export default function ProofEditor(){
   useEffect(()=>{
     // Default contradiction mode per exercise setting, if present
     setGoalIsContradiction((ex as any).goalMode === 'contradiction')
+    // Load autosaved steps
+    try{
+      const raw = localStorage.getItem(`proof:${exId}`)
+      if (raw){
+        const parsed = JSON.parse(raw) as Step[]
+        if (Array.isArray(parsed)) setSteps(parsed)
+      }else{
+        setSteps([])
+      }
+      setHistory([]); setFuture([]); setSelected([]); setActiveRule(null)
+    }catch{ /* ignore */ }
   }, [exIdx])
+
+  useEffect(()=>{
+    try{
+      localStorage.setItem(`proof:${exId}` , JSON.stringify(steps))
+    }catch{ /* ignore */ }
+  }, [exId, steps])
+
+  useEffect(()=>{
+    function onKey(e: KeyboardEvent){
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+      const isTyping = tag==='input' || tag==='textarea'
+      if (isTyping || axOpen || explainLine) return
+      // Axioms
+      if (e.key==='1' && allowedAxioms.includes(1)){ onPickRule('AX1'); e.preventDefault(); return }
+      if (e.key==='2' && allowedAxioms.includes(2)){ onPickRule('AX2'); e.preventDefault(); return }
+      if (e.key==='3' && allowedAxioms.includes(3)){ onPickRule('AX3'); e.preventDefault(); return }
+      // Rules
+      const k = e.key.toLowerCase()
+      if (k==='m' && allowedRules.includes('MP')){ onPickRule('MP'); e.preventDefault(); return }
+      if (k==='t' && allowedRules.includes('MT')){ onPickRule('MT'); e.preventDefault(); return }
+      if (k==='h' && allowedRules.includes('HS')){ onPickRule('HS'); e.preventDefault(); return }
+      if (k==='a' && allowedRules.includes('ADJ')){ onPickRule('ADJ'); e.preventDefault(); return }
+      if (k==='s' && allowedRules.includes('SIMP')){ onPickRule('SIMP'); e.preventDefault(); return }
+      if (k==='d' && allowedRules.includes('DS')){ onPickRule('DS'); e.preventDefault(); return }
+      if (k==='enter' && activeRule){ addStep(); e.preventDefault(); return }
+      if (k==='escape'){ setActiveRule(null); setSelected([]); e.preventDefault(); return }
+      if (k==='z' && (e.ctrlKey||e.metaKey)){ undo(); e.preventDefault(); return }
+      if (k==='y' && (e.ctrlKey||e.metaKey)){ redo(); e.preventDefault(); return }
+    }
+    window.addEventListener('keydown', onKey)
+    return ()=> window.removeEventListener('keydown', onKey)
+  }, [allowedAxioms, allowedRules, axOpen, explainLine, activeRule, steps])
 
   function justToTag(j: Just): string {
     switch(j.kind){
@@ -53,13 +100,18 @@ export default function ProofEditor(){
   }
 
   function display(formula: string): string {
-    const normalized = show(parse(formula))
-    if (!ascii) return normalized
-    return normalized
-      .split('¬').join('~')
-      .split('∧').join('^')
-      .split('∨').join('v')
-      .split('↔').join('<->')
+    try{
+      if (!formula || formula.trim()==='') return '—'
+      const normalized = show(parse(formula))
+      if (!ascii) return normalized
+      return normalized
+        .split('¬').join('~')
+        .split('∧').join('^')
+        .split('∨').join('v')
+        .split('↔').join('<->')
+    }catch{
+      return formula || '—'
+    }
   }
 
   function onPickRule(rule: Rule){
@@ -234,25 +286,55 @@ export default function ProofEditor(){
     }
   }
 
-  function detectContradiction(): boolean {
+  function detectContradiction(): { ok: true, msg: string } | { ok: false }{
     // Check if any conjunction is of the form X ∧ ¬X, or if both X and ¬X appear across lines.
-    const fs: F[] = allLines.map(l=> parse(l.formula))
+    const fs: { f:F, idx:number }[] = allLines.map(l=> ({ f: parse(l.formula), idx: l.idx }))
     // Direct X ∧ ¬X
-    for (const f of fs){
+    for (const row of fs){
+      const f = row.f
       if (f.kind==='and'){
-        if (f.left.kind==='neg' && equalF(f.left.inner, f.right)) return true
-        if (f.right.kind==='neg' && equalF(f.right.inner, f.left)) return true
+        if (f.left.kind==='neg' && equalF(f.left.inner, f.right)) return { ok: true, msg: `(línea ${row.idx}: X∧¬X)` }
+        if (f.right.kind==='neg' && equalF(f.right.inner, f.left)) return { ok: true, msg: `(línea ${row.idx}: X∧¬X)` }
       }
     }
     // Cross-line X, ¬X
     for (let i=0;i<fs.length;i++){
       for (let j=i+1;j<fs.length;j++){
         const a = fs[i], b = fs[j]
-        if (a.kind==='neg' && equalF(a.inner, b)) return true
-        if (b.kind==='neg' && equalF(b.inner, a)) return true
+        if (a.f.kind==='neg' && equalF(a.f.inner, b.f)) return { ok: true, msg: `(líneas ${a.idx} y ${b.idx})` }
+        if (b.f.kind==='neg' && equalF(b.f.inner, a.f)) return { ok: true, msg: `(líneas ${a.idx} y ${b.idx})` }
       }
     }
-    return false
+    return { ok: false }
+  }
+
+  function deleteLast(){
+    if (steps.length===0) return
+    const snapshot = steps
+    const next = snapshot.slice(0, -1)
+    setHistory(h => [...h, snapshot])
+    setFuture([])
+    setSteps(next)
+    setMessage('🗑️ Última línea eliminada')
+  }
+
+  function copyProof(){
+    const lines = allLines.map(l => `${l.idx}. ${display(l.formula)}  [${l.tag}]`).join('\n')
+    const header = `Ejercicio: ${ex.title}\nMeta: ${goalIsContradiction? 'Contradicción' : display(goal)}\n\n`
+    const text = header + lines
+    try{
+      navigator.clipboard.writeText(text)
+      setMessage('📋 Copiado al portapapeles')
+    }catch{
+      // Fallback
+      const ta = document.createElement('textarea')
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setMessage('📋 Copiado (fallback)')
+    }
   }
 
   function verify(){
@@ -265,7 +347,7 @@ export default function ProofEditor(){
     // Contradiction goal mode: proof is valid if steps are all valid and a contradiction appears
     const contradiction = detectContradiction()
     if (result.errors.length>0){ setMessage('❌ ' + result.errors.map(e=>`L${e.line}: ${e.msg}`).join(' | ')); return }
-    if (contradiction){ setMessage('✔️ Contradicción derivada') }
+    if (contradiction.ok){ setMessage(`✔️ Contradicción derivada ${contradiction.msg}`) }
     else setMessage('❌ No se derivó una contradicción')
   }
 
@@ -302,13 +384,16 @@ export default function ProofEditor(){
           </select>
           <label><input type="checkbox" checked={ascii} onChange={e=>setAscii(e.target.checked)} /> ASCII</label>
           <label title="Objetivo: derivar contradicción (p.ej., P∧¬P)"><input type="checkbox" checked={goalIsContradiction} onChange={e=>setGoalIsContradiction(e.target.checked)} /> Contradicción</label>
+          <label title="Mostrar ayudas semánticas"><input type="checkbox" checked={semanticsOn} onChange={e=>setSemanticsOn(e.target.checked)} /> Semántica</label>
           <button onClick={verify}>Verificar</button>
           <button onClick={undo} disabled={history.length===0}>Deshacer</button>
           <button onClick={redo} disabled={future.length===0}>Rehacer</button>
+          <button onClick={()=> deleteLast()} disabled={steps.length===0}>Borrar última</button>
+          <button onClick={()=> copyProof()} disabled={allLines.length===0}>Copiar texto</button>
           <button onClick={reset}>Reiniciar</button>
         </header>
         <div style={{margin:'8px 0', padding:8, border:'1px dashed #999', borderRadius:8}}>{message}</div>
-        {!goalIsContradiction && (
+        {(!goalIsContradiction && goal && goal.trim()!=='') && (
           <div style={{marginBottom:8}}>
             <b>Meta:</b> {display(goal)} {ex.hints && ex.hints.length>0 && <span style={{opacity:.7}}> • Pista: {ex.hints[0]}</span>}
           </div>
@@ -332,7 +417,15 @@ export default function ProofEditor(){
                  }}>
               <div style={{opacity:.7}}>{l.idx}.</div>
               <div>{display(l.formula)}</div>
-              <div style={{textAlign:'right', opacity:.8}}>{l.tag}</div>
+              <div style={{textAlign:'right', opacity:.8}}>
+                {l.tag}
+                {semanticsOn && l.idx>given.length && (
+                  <button
+                    onClick={(e)=>{ e.stopPropagation(); setExplainLine(l.idx) }}
+                    title="Explicar (verdad-tabla)"
+                    style={{marginLeft:8, padding:'2px 6px', fontSize:12}}>∵</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -401,6 +494,16 @@ export default function ProofEditor(){
           <div><b>DS:</b> X∨Y, ¬X ⟹ Y (o simétrico)</div>
         </div>
       </div>
+      {explainLine && (
+        <SemanticsModal
+          ascii={ascii}
+          lineIdx={explainLine}
+          getF={getF}
+          just={steps[explainLine - given.length - 1]?.just}
+          formula={allLines.find(l=>l.idx===explainLine)!.formula}
+          onClose={()=> setExplainLine(null)}
+        />
+      )}
     </div>
   )
 }
@@ -418,4 +521,117 @@ function AxiomPreview({n, α, β, γ, ascii}:{n:1|2|3, α:string, β:string, γ:
   }catch(e:any){
     return <div style={{marginTop:8, fontSize:13, color:'#b71c1c'}}>Error: {String(e.message||e)}</div>
   }
+}
+
+function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
+  ascii: boolean,
+  lineIdx: number,
+  getF: (i:number)=>F,
+  just: Just|undefined,
+  formula: string,
+  onClose: ()=>void,
+}){
+  function fmt(s: string){
+    if (!ascii) return s
+    return s.split('¬').join('~').split('∧').join('^').split('∨').join('v').split('↔').join('<->')
+  }
+  function ruleSchema(j: Just|undefined): { name: string, schema: string }|null{
+    if (!j) return null
+    switch(j.kind){
+      case 'MP': return { name:'Modus Ponens', schema: '(X^ (X->Y)) -> Y' }
+      case 'MT': return { name:'Modus Tollens', schema: '((X->Y) ^ ¬Y) -> ¬X' }
+      case 'HS': return { name:'Silogismo hipotético', schema: '((X->Y) ^ (Y->Z)) -> (X->Z)' }
+      case 'ADJ': return { name:'Adjunción', schema: '(X ^ Y) -> (X ^ Y)' }
+      case 'SIMP': return { name:'Simplificación', schema: '(X ^ Y) -> X' }
+      case 'DS': return { name:'Silogismo disyuntivo', schema: '((X v Y) ^ ¬X) -> Y' }
+      case 'AX': return { name:`Axioma A${j.axiom}`, schema: 'Instancia de esquema axiomático' }
+    }
+  }
+  const schemaInfo = ruleSchema(just)
+  let schemaValid: boolean|undefined
+  let schemaTable: ReturnType<typeof truthTable>|undefined
+  if (schemaInfo && schemaInfo.schema.includes('->')){
+    const f = parse(schemaInfo.schema)
+    schemaValid = isTautology(f)
+    schemaTable = truthTable([f])
+  }
+
+  // Concrete entailment check
+  const prem: F[] = []
+  if (just){
+    if (just.kind==='MP'){ prem.push(getF(just.from)!, getF(just.impliesFrom)!) }
+    else if (just.kind==='MT'){ prem.push(getF(just.imp)!, getF(just.not)!) }
+    else if (just.kind==='HS'){ prem.push(getF(just.left)!, getF(just.right)!) }
+    else if (just.kind==='ADJ'){ prem.push(getF(just.left)!, getF(just.right)!) }
+    else if (just.kind==='SIMP'){ prem.push(getF(just.from)!) }
+    else if (just.kind==='DS'){ prem.push(getF(just.disj)!, getF(just.not)!) }
+  }
+  const concl = parse(formula)
+  const entail = prem.length>0 ? entails(prem, concl) : { valid: true as const }
+
+  return (
+    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
+      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)', maxHeight:'80vh', overflow:'auto'}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <h3 style={{margin:0}}>Explicación semántica — L{lineIdx}</h3>
+          <button onClick={onClose}>Cerrar</button>
+        </div>
+        {schemaInfo && (
+          <div style={{marginTop:10}}>
+            <div><b>Regla:</b> {schemaInfo.name}</div>
+            <div><b>Esquema (tautología):</b> {fmt(schemaInfo.schema)} {typeof schemaValid==='boolean' && (
+              <span style={{marginLeft:8, color: schemaValid? '#1b5e20':'#b71c1c'}}>{schemaValid? 'Tautología':'No es tautología'}</span>
+            )}</div>
+            {schemaTable && (
+              <TT table={schemaTable} />
+            )}
+          </div>
+        )}
+        <div style={{marginTop:14}}>
+          <div><b>Este paso:</b> {prem.length>0 ? '¿Premisas ⊨ Conclusión?' : 'Axioma / línea básica'}</div>
+          {prem.length>0 && (
+            <div>
+              <div style={{marginTop:6}}>
+                {entail.valid
+                  ? <span style={{color:'#1b5e20'}}>Válido: no hay contramodelo</span>
+                  : <span style={{color:'#b71c1c'}}>No válido: contramodelo encontrado</span>}
+              </div>
+              {!entail.valid && (entail as any).countermodels && (
+                <div style={{marginTop:6}}>
+                  {(entail as any).countermodels.slice(0,1).map((rho: Record<string, boolean>, i:number)=> (
+                    <div key={i} style={{fontFamily:'monospace'}}>• {Object.entries(rho).map(([k,v])=> `${k}:${v?'T':'F'}`).join('  ')}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TT({table}:{table: ReturnType<typeof truthTable>}){
+  const { vars, rows } = table
+  if (vars.length>6) return <div style={{fontSize:12, opacity:.8}}>Tabla omitida por tamaño (demasiadas variables).</div>
+  return (
+    <div style={{overflowX:'auto', marginTop:8}}>
+      <table style={{borderCollapse:'collapse', fontFamily:'monospace', fontSize:12}}>
+        <thead>
+          <tr>
+            {vars.map(v=> <th key={v} style={{border:'1px solid #ddd', padding:'2px 6px'}}>{v}</th>)}
+            <th style={{border:'1px solid #ddd', padding:'2px 6px'}}>φ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r,i)=> (
+            <tr key={i}>
+              {vars.map(v=> <td key={v} style={{border:'1px solid #eee', textAlign:'center', padding:'2px 6px'}}>{r.valuation[v]?'T':'F'}</td>)}
+              <td style={{border:'1px solid #eee', textAlign:'center', padding:'2px 6px'}}>{r.values[0]?'T':'F'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
