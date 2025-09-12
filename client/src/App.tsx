@@ -7,7 +7,7 @@ export default function App(){
   return (
     <div style={{maxWidth:1000, margin:'0 auto', padding:16}}>
       <header style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
-        <h1 style={{margin:0}}>Sistemas Axiomáticos — MVP</h1>
+        <h1 style={{margin:0}}>Sistemas Axiomáticos: Introducción a la ciencia - C094 - C095</h1>
         <div style={{display:'flex', alignItems:'center', gap:8}}>
           <button onClick={()=> setAboutOpen(true)}>Acerca</button>
           <a href="https://github.com/msantelli/axiom-mvp" target="_blank" rel="noreferrer">Repositorio</a>
