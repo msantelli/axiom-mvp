@@ -4,11 +4,13 @@ import exercises from './exercises.json'
 
 export default function App(){
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [tutorialOpen, setTutorialOpen] = useState(false)
   return (
     <div className="app-container" style={{maxWidth:1000, margin:'24px auto', padding:16}}>
       <header style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
         <h1 style={{margin:0}}>Sistemas Axiomáticos: Introducción a la ciencia - C094 - C095</h1>
         <div style={{display:'flex', alignItems:'center', gap:8}}>
+          <button onClick={()=> setTutorialOpen(true)}>Tutorial</button>
           <button onClick={()=> setAboutOpen(true)}>Acerca</button>
           <a href="https://github.com/msantelli/axiom-mvp" target="_blank" rel="noreferrer">Repositorio</a>
           <a href="https://github.com/ariroffe/logics" target="_blank" rel="noreferrer">logics (opcional)</a>
@@ -21,7 +23,34 @@ export default function App(){
         <summary>Banco de ejercicios (JSON)</summary>
         <pre>{JSON.stringify(exercises, null, 2)}</pre>
       </details>
+      {tutorialOpen && <TutorialModal onClose={()=> setTutorialOpen(false)} />}
       {aboutOpen && <AboutModal onClose={()=> setAboutOpen(false)} />}
+    </div>
+  )
+}
+
+function TutorialModal({onClose}:{onClose: ()=>void}){
+  return (
+    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
+      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)', maxHeight:'80vh', overflow:'auto'}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12}}>
+          <h3 style={{margin:0}}>Tutorial rápido</h3>
+          <button onClick={onClose}>Cerrar</button>
+        </div>
+        <div style={{marginTop:12, lineHeight:1.6}}>
+          <ol style={{paddingLeft:18}}>
+            <li>Elegí un ejercicio desde el selector superior e identificá la meta y las premisas dadas.</li>
+            <li>Revisá las reglas permitidas indicadas en la tarjeta “Demostración”. Activá una regla y luego marcá las líneas que requiere.</li>
+            <li>Confirmá con “Agregar línea” (o Enter). Cada línea nueva queda numerada, con su justificación y referencias.</li>
+            <li>Usá los atajos de teclado (M, T, H, A, S, D) para acelerar la selección de reglas y Ctrl/Cmd+Z para deshacer.</li>
+            <li>Verificá los pasos con el botón “Verificar” o activá “Contradicción” cuando el objetivo sea derivar una inconsistencia.</li>
+            <li>Pedí ayuda semántica activando el switch “Semántica” y usando el botón ∵ en cada línea para ver tablas de verdad.</li>
+          </ol>
+          <p style={{marginTop:16}}>
+            ¿Te quedaste con dudas? Consultá la guía completa en <a href="/tutorial.html" target="_blank" rel="noreferrer">/tutorial.html</a>.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
