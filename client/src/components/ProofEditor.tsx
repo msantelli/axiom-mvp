@@ -3,14 +3,14 @@ import exercisesData from '../exercises.json'
 import { parse, show, equalF, checkProof, instantiate, AXIOMS, type F, type Step, type Just } from '../lib/logic'
 import { entails, isTautology, truthTable } from '../lib/semantics'
 
-type Rule = 'MP'|'MT'|'HS'|'ADJ'|'SIMP'|'DS'|'IFF'|'AX1'|'AX2'|'AX3'
+type Rule = 'MP'|'MT'|'SH'|'ADJ'|'SIMP'|'SD'|'IFF'|'AX1'|'AX2'|'AX3'
 
 export default function ProofEditor(){
   const [exIdx, setExIdx] = useState(0)
   const ex = exercisesData[exIdx]
   const given = ex.given ?? []
   const goal = ex.goal
-  const allowedRules: string[] = (ex.allowed?.rules as any) ?? ['MP']
+  const allowedRules: Rule[] = ((ex.allowed?.rules as Rule[]) ?? ['MP'])
   const allowedAxioms: number[] = (ex.allowed?.axioms as any) ?? [1,2,3]
 
   const [steps, setSteps] = useState<Step[]>([])
@@ -78,10 +78,10 @@ export default function ProofEditor(){
       const k = e.key.toLowerCase()
       if (k==='m' && allowedRules.includes('MP')){ onPickRule('MP'); e.preventDefault(); return }
       if (k==='t' && allowedRules.includes('MT')){ onPickRule('MT'); e.preventDefault(); return }
-      if (k==='h' && allowedRules.includes('HS')){ onPickRule('HS'); e.preventDefault(); return }
+      if (k==='h' && allowedRules.includes('SH')){ onPickRule('SH'); e.preventDefault(); return }
       if (k==='a' && allowedRules.includes('ADJ')){ onPickRule('ADJ'); e.preventDefault(); return }
       if (k==='s' && allowedRules.includes('SIMP')){ onPickRule('SIMP'); e.preventDefault(); return }
-      if (k==='d' && allowedRules.includes('DS')){ onPickRule('DS'); e.preventDefault(); return }
+      if (k==='d' && allowedRules.includes('SD')){ onPickRule('SD'); e.preventDefault(); return }
       if (k==='enter' && activeRule){ addStep(); e.preventDefault(); return }
       if (k==='escape'){ setActiveRule(null); setSelected([]); e.preventDefault(); return }
       if (k==='z' && (e.ctrlKey||e.metaKey)){ undo(); e.preventDefault(); return }
@@ -96,10 +96,10 @@ export default function ProofEditor(){
       case 'AX': return `A${j.axiom}`
       case 'MP': return `MP ${j.from},${j.impliesFrom}`
       case 'MT': return `MT ${j.imp},${j.not}`
-      case 'HS': return `SH ${j.left},${j.right}`
+      case 'SH': return `SH ${j.left},${j.right}`
       case 'ADJ': return `ADJ ${j.left},${j.right}`
       case 'SIMP': return `SIMP ${j.from}.${j.pick==='left'?'L':'R'}`
-      case 'DS': return `DS ${j.disj},${j.not}`
+      case 'SD': return `SD ${j.disj},${j.not}`
       case 'IFF': return `↔E ${j.from}.${j.dir==='LtoR'?'→':'←'}`
       default: return '—'
     }
@@ -141,10 +141,10 @@ export default function ProofEditor(){
     switch(rule){
       case 'MP': return 'Modus Ponens: seleccioná dos líneas: X y (X→Y)'
       case 'MT': return 'Modus Tollens: seleccioná dos líneas: (X→Y) y ¬Y'
-      case 'HS': return 'Silogismo hipotético: seleccioná dos líneas: (X→Y) y (Y→Z)'
+      case 'SH': return 'Silogismo hipotético: seleccioná dos líneas: (X→Y) y (Y→Z)'
       case 'ADJ': return 'Adjunción: seleccioná dos líneas: X y Y'
       case 'SIMP': return 'Simplificación: seleccioná una conjunción X∧Y y elegí lado'
-      case 'DS': return 'Silogismo disyuntivo: seleccioná dos líneas: (X∨Y) y ¬X o ¬Y'
+      case 'SD': return 'Silogismo disyuntivo: seleccioná dos líneas: (X∨Y) y ¬X o ¬Y'
       case 'IFF': return '↔ Eliminación: seleccioná una bicondicional X↔Y y elegí dirección'
       default: return 'Seleccioná una regla'
     }
@@ -165,10 +165,10 @@ export default function ProofEditor(){
       case 'AX': return []
       case 'MP': return [j.from, j.impliesFrom]
       case 'MT': return [j.imp, j.not]
-      case 'HS': return [j.left, j.right]
+      case 'SH': return [j.left, j.right]
       case 'ADJ': return [j.left, j.right]
       case 'SIMP': return [j.from]
-      case 'DS': return [j.disj, j.not]
+      case 'SD': return [j.disj, j.not]
       case 'IFF': return [j.from]
     }
   }
@@ -212,18 +212,18 @@ export default function ProofEditor(){
         }
         return { error: 'Selección inválida para MT' }
       }
-      if (activeRule==='HS'){
-        if (selected.length!==2) return { error: 'HS requiere dos líneas' }
+      if (activeRule==='SH'){
+        if (selected.length!==2) return { error: 'SH requiere dos líneas' }
         const [i1, i2] = selected
         const F1 = getF(i1)
         const F2 = getF(i2)
         if (F1.kind==='imp' && F2.kind==='imp' && equalF(F1.right, F2.left)){
-          return { formula: show({kind:'imp', left: F1.left, right: F2.right}), just: { kind:'HS', left: i1, right: i2 } }
+          return { formula: show({kind:'imp', left: F1.left, right: F2.right}), just: { kind:'SH', left: i1, right: i2 } }
         }
         if (F1.kind==='imp' && F2.kind==='imp' && equalF(F2.right, F1.left)){
-          return { formula: show({kind:'imp', left: F2.left, right: F1.right}), just: { kind:'HS', left: i2, right: i1 } }
+          return { formula: show({kind:'imp', left: F2.left, right: F1.right}), just: { kind:'SH', left: i2, right: i1 } }
         }
-        return { error: 'Selección inválida para HS' }
+        return { error: 'Selección inválida para SH' }
       }
       if (activeRule==='ADJ'){
         if (selected.length!==2) return { error: 'ADJ requiere dos líneas' }
@@ -238,21 +238,21 @@ export default function ProofEditor(){
         const proj = simpPick==='left' ? F1.left : F1.right
         return { formula: show(proj), just: { kind:'SIMP', from: i1, pick: simpPick } }
       }
-      if (activeRule==='DS'){
-        if (selected.length!==2) return { error: 'DS requiere dos líneas' }
+      if (activeRule==='SD'){
+        if (selected.length!==2) return { error: 'SD requiere dos líneas' }
         const [i1, i2] = selected
         const F1 = getF(i1)
         const F2 = getF(i2)
         // (Disj, Neg) or (Neg, Disj)
         if (F1.kind==='or' && F2.kind==='neg'){
-          if (equalF(F2.inner, F1.left)) return { formula: show(F1.right), just: { kind:'DS', disj: i1, not: i2 } }
-          if (equalF(F2.inner, F1.right)) return { formula: show(F1.left), just: { kind:'DS', disj: i1, not: i2 } }
+          if (equalF(F2.inner, F1.left)) return { formula: show(F1.right), just: { kind:'SD', disj: i1, not: i2 } }
+          if (equalF(F2.inner, F1.right)) return { formula: show(F1.left), just: { kind:'SD', disj: i1, not: i2 } }
         }
         if (F2.kind==='or' && F1.kind==='neg'){
-          if (equalF(F1.inner, F2.left)) return { formula: show(F2.right), just: { kind:'DS', disj: i2, not: i1 } }
-          if (equalF(F1.inner, F2.right)) return { formula: show(F2.left), just: { kind:'DS', disj: i2, not: i1 } }
+          if (equalF(F1.inner, F2.left)) return { formula: show(F2.right), just: { kind:'SD', disj: i2, not: i1 } }
+          if (equalF(F1.inner, F2.right)) return { formula: show(F2.left), just: { kind:'SD', disj: i2, not: i1 } }
         }
-        return { error: 'Selección inválida para DS' }
+        return { error: 'Selección inválida para SD' }
       }
       if (activeRule==='IFF'){
         if (selected.length!==1) return { error: '↔ Eliminación requiere una sola bicondicional' }
@@ -475,7 +475,7 @@ export default function ProofEditor(){
       <div>
         <h3>Reglas</h3>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6}}>
-          {[{rule:'MP', label:'MP'},{rule:'MT', label:'MT'},{rule:'HS', label:'SH'},{rule:'ADJ', label:'ADJ'},{rule:'SIMP', label:'SIMP'},{rule:'DS', label:'DS'},{rule:'IFF', label:'↔E'}].map(({rule,label})=> (
+          {[{rule:'MP', label:'MP'},{rule:'MT', label:'MT'},{rule:'SH', label:'SH'},{rule:'ADJ', label:'ADJ'},{rule:'SIMP', label:'SIMP'},{rule:'SD', label:'SD'},{rule:'IFF', label:'↔E'}].map(({rule,label})=> (
             <button key={rule}
                     disabled={!allowedRules.includes(rule as any)}
                     onClick={()=> onPickRule(rule as Rule)}
@@ -583,10 +583,10 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
     switch(j.kind){
       case 'MP': return { name:'Modus Ponens', schema: '(X^ (X->Y)) -> Y' }
       case 'MT': return { name:'Modus Tollens', schema: '((X->Y) ^ ¬Y) -> ¬X' }
-      case 'HS': return { name:'Silogismo hipotético', schema: '((X->Y) ^ (Y->Z)) -> (X->Z)' }
+      case 'SH': return { name:'Silogismo hipotético', schema: '((X->Y) ^ (Y->Z)) -> (X->Z)' }
       case 'ADJ': return { name:'Adjunción', schema: '(X ^ Y) -> (X ^ Y)' }
       case 'SIMP': return { name:'Simplificación', schema: '(X ^ Y) -> X' }
-      case 'DS': return { name:'Silogismo disyuntivo', schema: '((X v Y) ^ ¬X) -> Y' }
+      case 'SD': return { name:'Silogismo disyuntivo', schema: '((X v Y) ^ ¬X) -> Y' }
       case 'IFF': return { name:'↔ Eliminación', schema: '((X <-> Y) -> (X -> Y))' }
       case 'AX': return { name:`Axioma A${j.axiom}`, schema: 'Instancia de esquema axiomático' }
     }
@@ -605,10 +605,10 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
   if (just){
     if (just.kind==='MP'){ prem.push(getF(just.from)!, getF(just.impliesFrom)!) }
     else if (just.kind==='MT'){ prem.push(getF(just.imp)!, getF(just.not)!) }
-    else if (just.kind==='HS'){ prem.push(getF(just.left)!, getF(just.right)!) }
+    else if (just.kind==='SH'){ prem.push(getF(just.left)!, getF(just.right)!) }
     else if (just.kind==='ADJ'){ prem.push(getF(just.left)!, getF(just.right)!) }
     else if (just.kind==='SIMP'){ prem.push(getF(just.from)!) }
-    else if (just.kind==='DS'){ prem.push(getF(just.disj)!, getF(just.not)!) }
+    else if (just.kind==='SD'){ prem.push(getF(just.disj)!, getF(just.not)!) }
   }
   const concl = parse(formula)
   const entail = prem.length>0 ? entails(prem, concl) : { valid: true as const }

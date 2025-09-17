@@ -29,7 +29,7 @@
     "goal": "S",
     "given": ["P->Q","Q->R","R->S","P"],
     "givenLabel": "Axioma",
-    "allowed": { "axioms": [], "rules": ["HS","MP"] },
+    "allowed": { "axioms": [], "rules": ["SH","MP"] },
     "hints": ["Encadená implicaciones con Silogismo hipotético y cerrá con Modus Ponens"],
     "difficulty": 2
   },
@@ -69,7 +69,7 @@
     "goal": "C",
     "given": ["A v B","~A","B->C","D"],
     "givenLabel": "Axioma",
-    "allowed": { "axioms": [], "rules": ["DS","MP"] },
+    "allowed": { "axioms": [], "rules": ["SD","MP"] },
     "hints": ["Usá Silogismo disyuntivo para obtener B y luego Modus Ponens"],
     "difficulty": 2
   },
@@ -80,7 +80,7 @@
     "goalMode": "contradiction",
     "given": ["A v B","B->C","~A","~C"],
     "givenLabel": "Axioma",
-    "allowed": { "axioms": [], "rules": ["DS","MP"] },
+    "allowed": { "axioms": [], "rules": ["SD","MP"] },
     "hints": ["Derivá B por Silogismo disyuntivo y luego C por Modus Ponens; contradicción con ¬C"],
     "difficulty": 2
   },
@@ -102,7 +102,7 @@
     "goalMode": "contradiction",
     "given": ["W <-> Z","Z","W->R","~R"],
     "givenLabel": "Axioma",
-    "allowed": { "axioms": [], "rules": ["MP","HS","IFF"] },
+    "allowed": { "axioms": [], "rules": ["MP","SH","IFF"] },
     "hints": ["De Z y W↔Z inferí W usando Modus Ponens; luego R; contradicción con ¬R"],
     "difficulty": 3
   },

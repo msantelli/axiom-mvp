@@ -203,10 +203,10 @@ export type Just =
   | { kind: 'AX', axiom: 1|2|3 }
   | { kind: 'MP', from: number, impliesFrom: number }
   | { kind: 'MT', imp: number, not: number }
-  | { kind: 'HS', left: number, right: number }
+  | { kind: 'SH', left: number, right: number }
   | { kind: 'ADJ', left: number, right: number }
   | { kind: 'SIMP', from: number, pick: 'left'|'right' }
-  | { kind: 'DS', disj: number, not: number }
+  | { kind: 'SD', disj: number, not: number }
   | { kind: 'IFF', from: number, dir: 'LtoR'|'RtoL' }
 
 export type Step = { line: number, formula: string, just: Just }
@@ -246,7 +246,7 @@ export function checkProof(steps: Step[], goal: string, given: string[] = []): C
         if (!equalF(imp.right, n.inner)){ errors.push({line:s.line, msg:`No coincide ¬Y con el consecuente de X->Y`}); parsed.push(f); continue }
         const expect: F = { kind:'neg', inner: imp.left }
         if (!equalF(expect, f)){ errors.push({line:s.line, msg:`La conclusión debería ser ${show(expect)}`}); parsed.push(f); continue }
-      }else if (s.just.kind==='HS'){
+      }else if (s.just.kind==='SH'){
         const l = getFormulaAt(s.just.left)
         const r = getFormulaAt(s.just.right)
         if (!l || !r){ errors.push({line:s.line, msg:"Referencias de líneas inválidas"}); parsed.push(f); continue }
@@ -266,7 +266,7 @@ export function checkProof(steps: Step[], goal: string, given: string[] = []): C
         if (c.kind!=='and'){ errors.push({line:s.line, msg:`La línea ${s.just.from} no es una conjunción`}); parsed.push(f); continue }
         const expect = s.just.pick==='left' ? c.left : c.right
         if (!equalF(expect, f)){ errors.push({line:s.line, msg:`La conclusión debería ser ${show(expect)}`}); parsed.push(f); continue }
-      }else if (s.just.kind==='DS'){
+      }else if (s.just.kind==='SD'){
         const disj = getFormulaAt(s.just.disj)
         const n = getFormulaAt(s.just.not)
         if (!disj || !n){ errors.push({line:s.line, msg:"Referencias de líneas inválidas"}); parsed.push(f); continue }
