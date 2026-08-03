@@ -52,7 +52,7 @@ export default function App(){
         <pre>{JSON.stringify(exercises, null, 2)}</pre>
       </details>
       <footer className="pie">
-        <p>hecho por mauro santelli (uba · iif-sadaf [conicet] · udesa) · introducción a la ciencia, c094 y c095 · <a href="https://github.com/ariroffe/logics" target="_blank" rel="noreferrer">logics</a> de Ariel Roffé como referencia</p>
+        <p>hecho por mauro santelli (uba · iif-sadaf [conicet]), profesor invitado en udesa · introducción a la ciencia, c094 y c095 · <a href="https://github.com/ariroffe/logics" target="_blank" rel="noreferrer">logics</a> de Ariel Roffé como referencia</p>
       </footer>
       {tutorialOpen && <TutorialModal onClose={()=> setTutorialOpen(false)} />}
       {aboutOpen && <AboutModal onClose={()=> setAboutOpen(false)} />}
