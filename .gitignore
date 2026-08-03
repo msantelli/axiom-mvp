@@ -63,6 +63,7 @@ coverage/
 # Claude Code auxiliary files
 CLAUDE.md
 STATUS.md
+.claude/
 
 # Research materials (not needed by other developers)
 research/
