@@ -95,7 +95,7 @@ function AboutModal({onClose}:{onClose: ()=>void}){
           <button className="boton" onClick={onClose}>cerrar</button>
         </div>
         <div className="modal-cuerpo">
-          <p><b>Autor:</b> <a href="https://maurosantelli.com.ar" target="_blank" rel="noreferrer">Mauro Santelli</a> (UBA - IIF-SADAF[CONICET] - Profesor invitado UDESA).</p>
+          <p><b>Autor:</b> <a href="https://maurosantelli.com.ar" target="_blank" rel="noreferrer">Mauro Santelli</a> (UBA - IIF-SADAF[CONICET]), profesor invitado en UDESA.</p>
           <p>App para uso de la materia <i>Introducción a la ciencia</i> (C094 y C095).</p>
           <p><b>Profesores:</b> Aníbal Szapiro, Tomás Balmaceda, Sergio Barberis, Andrea Melamed, Mauro Santelli, Nicolás Serrano, Virginia Ketzelman y Christián Carman.</p>
           <p><b>Tutores:</b> Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky, Jonathan Erenfryd, Paula Villafañe, Marina Melantoni, Alejandro Petrone, Luciana Espinosa y Alejandro Zárate.</p>

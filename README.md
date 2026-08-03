@@ -42,7 +42,7 @@ Abrí http://localhost:5173
 El editor busca **alinear la experiencia con las demostraciones en papel**: líneas numeradas, reglas explícitas, referencias claras y verificación incremental. Las ayudas ∵ conectan con la intuición de las **tablas de verdad** sin distraer del método axiomático.
 
 ## Atribución
-- Autor: [Mauro Santelli](https://maurosantelli.com.ar) (UBA - IIF-SADAF[CONICET] - UDESA).
+- Autor: [Mauro Santelli](https://maurosantelli.com.ar) (UBA - IIF-SADAF[CONICET]), profesor invitado en UDESA.
 - App para uso de la materia Introducción a la ciencia (C094 y C095).
 - Profesores: Aníbal Szapiro, Tomás Balmaceda, Sergio Barberis, Andrea Melamed, Mauro Santelli, Nicolás Serrano, Virginia Ketzelman y Christián Carman.
 - Tutores: Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky, Jonathan Erenfryd, Paula Villafañe, Marina Melantoni, Alejandro Petrone, Luciana Espinosa y Alejandro Zárate.
