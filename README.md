@@ -24,7 +24,8 @@ Abrí http://localhost:5173
 - Elegí una **regla** (MP, MT, HS, ADJ, SIMP, DS), luego hacé click en las líneas que requiere. Confirmá “Agregar línea”.
 - Cada línea queda registrada con su **regla** y **referencias**. El botón **Verificar** chequea todos los pasos.
 - Teclado: M (MP), T (MT), H (SH), A (ADJ), S (SIMP), D (DS), 1/2/3 (instanciar A1–A3), Enter (agregar), Esc (cancelar), Ctrl/Cmd+Z / +Y (Deshacer/Rehacer).
-- **ASCII/Unicode**: alterná ~/¬, ^/∧, v/∨, <->/↔.
+- **ASCII/Unicode**: alterná ~/¬, ^/∧, v/∨, <->/↔ (en Unicode la implicación se muestra como →; el parser acepta `->` y `→`).
+- **Tema claro/oscuro**: toggle en la cabecera, persistido en `localStorage`; arranca según la preferencia del sistema. Misma familia visual que forma lógica / maurosantelli.com.ar (Geist y Geist Mono autohosteadas).
 - **Contradicción**: para ejercicios de inconsistencia (Guía 6), activá “Contradicción”. El verificador confirma cuando hay X y ¬X (o X∧¬X) y te dice **en qué líneas**.
 - **Axiomas A1–A3**: instanciá α, β, γ con previsualización.
 - **Semántica (opt-in)**: activá “Semántica” y tocá ∵ en una línea para ver la **tautología del esquema** (pequeña verdad‑tabla) y si tus **premisas implican** la conclusión (contraejemplo si no).

@@ -109,7 +109,8 @@ export default function ProofEditor(){
     try{
       if (!formula || formula.trim()==='') return '—'
       const normalized = show(parse(formula))
-      if (!ascii) return normalized
+      // show() emite '->' para la implicación; en pantalla va la flecha
+      if (!ascii) return normalized.split('->').join('→')
       return normalized
         .split('¬').join('~')
         .split('∧').join('^')
@@ -391,62 +392,67 @@ export default function ProofEditor(){
     })
   }
 
+  const bannerClase = message.includes('❌') ? 'banner banner-error'
+    : (message.includes('✔') ? 'banner banner-ok' : 'banner')
+
   return (
-    <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:12}}>
+    <div className="tablero">
       <div>
-        <header style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-          <select value={exIdx} onChange={e=>{ setExIdx(parseInt(e.target.value)); reset() }}>
+        <header className="barra">
+          <select className="selector-ejercicio" value={exIdx} onChange={e=>{ setExIdx(parseInt(e.target.value)); reset() }}>
             {exercisesData.map((e,i)=> <option key={e.id} value={i}>{e.title}</option>)}
           </select>
-          <label><input type="checkbox" checked={ascii} onChange={e=>setAscii(e.target.checked)} /> ASCII</label>
-          <label title="Objetivo: derivar contradicción (p.ej., P∧¬P)"><input type="checkbox" checked={goalIsContradiction} onChange={e=>setGoalIsContradiction(e.target.checked)} /> Contradicción</label>
-          <label title="Mostrar ayudas semánticas"><input type="checkbox" checked={semanticsOn} onChange={e=>setSemanticsOn(e.target.checked)} /> Semántica</label>
-          <button onClick={verify}>Verificar</button>
-          <button onClick={undo} disabled={history.length===0}>Deshacer</button>
-          <button onClick={redo} disabled={future.length===0}>Rehacer</button>
-          <button onClick={()=> deleteLast()} disabled={steps.length===0}>Borrar última</button>
-          <button onClick={()=> copyProof()} disabled={allLines.length===0}>Copiar texto</button>
-          <button onClick={reset}>Reiniciar</button>
+          <label className="check"><input type="checkbox" checked={ascii} onChange={e=>setAscii(e.target.checked)} /> ascii</label>
+          <label className="check" title="Objetivo: derivar contradicción (p.ej., P∧¬P)"><input type="checkbox" checked={goalIsContradiction} onChange={e=>setGoalIsContradiction(e.target.checked)} /> contradicción</label>
+          <label className="check" title="Mostrar ayudas semánticas"><input type="checkbox" checked={semanticsOn} onChange={e=>setSemanticsOn(e.target.checked)} /> semántica</label>
+          <button className="boton boton-primario" onClick={verify}>verificar</button>
+          <button className="boton" onClick={undo} disabled={history.length===0}>deshacer</button>
+          <button className="boton" onClick={redo} disabled={future.length===0}>rehacer</button>
+          <button className="boton" onClick={()=> deleteLast()} disabled={steps.length===0}>borrar última</button>
+          <button className="boton" onClick={()=> copyProof()} disabled={allLines.length===0}>copiar texto</button>
+          <button className="boton" onClick={reset}>reiniciar</button>
         </header>
-        <div className="banner" style={{margin:'8px 0', padding:10}}>{message}</div>
+        <div className={bannerClase} role="status" aria-live="polite">{message}</div>
         {(!goalIsContradiction && goal && goal.trim()!=='') && (
-          <div style={{marginBottom:8}}>
-            <b>Meta:</b> {display(goal)} {ex.hints && ex.hints.length>0 && <span style={{opacity:.7}}> • Pista: {ex.hints[0]}</span>}
+          <div className="meta-fila">
+            <span className="meta-etiqueta">meta</span>
+            <span className="meta-formula">{display(goal)}</span>
+            {ex.hints && ex.hints.length>0 && <span className="meta-pista">· Pista: {ex.hints[0]}</span>}
           </div>
         )}
-        <div>
-          <b>Reglas permitidas:</b> {allowedRules.join(', ')} {allowedAxioms.length>0 && <> • <b>Axiomas:</b> {allowedAxioms.map(a=>'A'+a).join(', ')}</>}
+        <div className="reglas-permitidas">
+          reglas permitidas: {allowedRules.join(', ')}{allowedAxioms.length>0 && <> · axiomas: {allowedAxioms.map(a=>'A'+a).join(', ')}</>}
         </div>
-        <h3>Demostración</h3>
-        <div>
+        <h3 className="hoja-titulo">Demostración</h3>
+        <div className="hoja">
+          {allLines.length===0 && (
+            <div className="hoja-vacia">Todavía no hay líneas: instanciá un axioma para empezar.</div>
+          )}
           {allLines.map(l => (
             <div key={l.idx}
                  onClick={()=> toggleSelect(l.idx)}
                  onMouseEnter={()=>{ setHoverLine(l.idx); setHoverRefs(refsForLine(l.idx)) }}
                  onMouseLeave={()=>{ setHoverLine(null); setHoverRefs([]) }}
-                 style={{
-                   display:'grid', gridTemplateColumns:'40px 1fr 120px', gap:8, padding:'8px 10px', margin:'6px 0',
-                   border:'1px solid #e2e8f0', borderRadius:8, boxShadow:'0 1px 2px rgba(0,0,0,.04)',
-                   background: (selected.includes(l.idx) ? '#e3f2fd' : (hoverLine===l.idx ? '#fff8e1' : (hoverRefs.includes(l.idx) ? '#e8f5e9' : '#fff'))),
-                   outline: hoverRefs.includes(l.idx) ? '2px solid #a5d6a7' : undefined,
-                   cursor: activeRule? 'pointer':'default'
-                 }}>
-              <div style={{opacity:.7}}>{l.idx}.</div>
-              <div>{display(l.formula)}</div>
-              <div style={{textAlign:'right', opacity:.8}}>
+                 className={'linea'
+                   + (activeRule ? ' linea-clickeable' : '')
+                   + (selected.includes(l.idx) ? ' linea-sel' : '')
+                   + (hoverRefs.includes(l.idx) ? ' linea-ref' : '')}>
+              <div className="linea-num">{l.idx}.</div>
+              <div className="linea-formula">{display(l.formula)}</div>
+              <div className="linea-tag">
                 {l.tag}
                 {semanticsOn && l.idx>given.length && (
                   <button
+                    className="boton-porque"
                     onClick={(e)=>{ e.stopPropagation(); setExplainLine(l.idx) }}
-                    title="Explicar (verdad-tabla)"
-                    style={{marginLeft:8, padding:'2px 6px', fontSize:12}}>∵</button>
+                    title="Explicar (verdad-tabla)">∵</button>
                 )}
               </div>
             </div>
           ))}
         </div>
         {(activeRule==='SIMP' || activeRule==='IFF') && (
-          <div style={{marginTop:8}}>
+          <div className="fila-opciones">
             {activeRule==='SIMP' && (
               <>
                 <label>Proyección: </label>
@@ -467,36 +473,40 @@ export default function ProofEditor(){
             )}
           </div>
         )}
-        <div style={{marginTop:8, display:'flex', gap:8}}>
-          <button disabled={!activeRule} onClick={addStep}>Agregar línea ({activeRule ?? '—'})</button>
-          <button onClick={()=>{ setActiveRule(null); setSelected([]); setMessage('Seleccioná una regla')}}>Cancelar selección</button>
+        <div className="fila-acciones">
+          <button className="boton boton-primario" disabled={!activeRule} onClick={addStep}>agregar línea ({activeRule ?? '—'})</button>
+          <button className="boton" onClick={()=>{ setActiveRule(null); setSelected([]); setMessage('Seleccioná una regla')}}>cancelar selección</button>
         </div>
       </div>
-      <div>
-        <h3>Reglas</h3>
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6}}>
-          {[{rule:'MP', label:'MP'},{rule:'MT', label:'MT'},{rule:'SH', label:'SH'},{rule:'ADJ', label:'ADJ'},{rule:'SIMP', label:'SIMP'},{rule:'SD', label:'SD'},{rule:'IFF', label:'↔E'}].map(({rule,label})=> (
-            <button key={rule}
-                    disabled={!allowedRules.includes(rule as any)}
-                    onClick={()=> onPickRule(rule as Rule)}
-                    title={instructionFor(rule as Rule)}
-                    style={{padding:'6px 8px', border: activeRule===rule? '2px solid #1976d2':'1px solid #ccc', borderRadius:6, background: activeRule===rule? '#e3f2fd':'#fff', fontSize:11}}>
-              {label}
-            </button>
-          ))}
-        </div>
-        <h4 style={{marginTop:12}}>Axiomas</h4>
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6}}>
-          {[1,2,3].map(n=> (
-            <button key={n} disabled={!allowedAxioms.includes(n as any)} onClick={()=> onPickRule(('AX'+n) as Rule)} style={{fontSize:11}}>
-              A{n}
-            </button>
-          ))}
-        </div>
+      <div className="panel">
+        <section>
+          <h3 className="panel-titulo">Reglas</h3>
+          <div className="grilla-reglas">
+            {[{rule:'MP', label:'MP'},{rule:'MT', label:'MT'},{rule:'SH', label:'SH'},{rule:'ADJ', label:'ADJ'},{rule:'SIMP', label:'SIMP'},{rule:'SD', label:'SD'},{rule:'IFF', label:'↔E'}].map(({rule,label})=> (
+              <button key={rule}
+                      className={'tecla-regla' + (activeRule===rule ? ' tecla-activa' : '')}
+                      disabled={!allowedRules.includes(rule as any)}
+                      onClick={()=> onPickRule(rule as Rule)}
+                      title={instructionFor(rule as Rule)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+        <section>
+          <h3 className="panel-titulo">Axiomas</h3>
+          <div className="grilla-axiomas">
+            {[1,2,3].map(n=> (
+              <button key={n} className="tecla-regla" disabled={!allowedAxioms.includes(n as any)} onClick={()=> onPickRule(('AX'+n) as Rule)}>
+                A{n}
+              </button>
+            ))}
+          </div>
+        </section>
         {axOpen && (
-          <div style={{marginTop:12, padding:10, border:'1px solid #bbb', borderRadius:8}}>
-            <div><b>Instanciar A{axOpen.n}</b></div>
-            <div style={{display:'grid', gridTemplateColumns:'40px 1fr', gap:6, marginTop:6}}>
+          <div className="caja-axioma">
+            <div className="caja-axioma-titulo">Instanciar A{axOpen.n}</div>
+            <div className="grilla-griegas">
               <label>α</label>
               <input value={axAlpha} onChange={e=>setAxAlpha(e.target.value)} placeholder="ej: P" />
               <label>β</label>
@@ -509,30 +519,31 @@ export default function ProofEditor(){
               )}
             </div>
             <AxiomPreview n={axOpen.n} α={axAlpha} β={axBeta} γ={axGamma} ascii={ascii} />
-            <div style={{display:'flex', gap:8, marginTop:8}}>
-              <button onClick={() => confirmAxiom(axOpen.n)}>Agregar</button>
-              <button onClick={() => setAxOpen(null)}>Cancelar</button>
+            <div className="fila-acciones">
+              <button className="boton boton-primario" onClick={() => confirmAxiom(axOpen.n)}>agregar</button>
+              <button className="boton" onClick={() => setAxOpen(null)}>cancelar</button>
             </div>
           </div>
         )}
-        <div style={{marginTop:12}}>
-          <button 
-            onClick={()=> setExplainLine(-1)} 
-            style={{marginBottom:8, padding:'4px 8px', fontSize:11, cursor:'pointer'}}
+        <section>
+          <button
+            className="boton"
+            onClick={()=> setExplainLine(-1)}
             title="Ver definiciones de axioma y teorema"
+            style={{marginBottom:10}}
           >
-            📖 Definiciones
+            definiciones
           </button>
-          <div style={{fontSize:12, opacity:.8}}>
-            <div><b>Modus Ponens:</b> X→Y, X ⟹ Y</div>
-            <div><b>Modus Tollens:</b> X→Y, ¬Y ⟹ ¬X</div>
-            <div><b>Silogismo hipotético:</b> X→Y, Y→Z ⟹ X→Z</div>
-            <div><b>Adjunción:</b> X, Y ⟹ X∧Y</div>
-            <div><b>Simplificación:</b> X∧Y ⟹ X | Y</div>
-            <div><b>Silogismo disyuntivo:</b> X∨Y, ¬X ⟹ Y (o simétrico)</div>
-            <div><b>↔ Eliminación:</b> X↔Y ⟹ (X→Y) | (Y→X)</div>
+          <div className="chuleta">
+            <div><b>Modus Ponens:</b> <span className="esquema">X→Y, X ⟹ Y</span></div>
+            <div><b>Modus Tollens:</b> <span className="esquema">X→Y, ¬Y ⟹ ¬X</span></div>
+            <div><b>Silogismo hipotético:</b> <span className="esquema">X→Y, Y→Z ⟹ X→Z</span></div>
+            <div><b>Adjunción:</b> <span className="esquema">X, Y ⟹ X∧Y</span></div>
+            <div><b>Simplificación:</b> <span className="esquema">X∧Y ⟹ X | Y</span></div>
+            <div><b>Silogismo disyuntivo:</b> <span className="esquema">X∨Y, ¬X ⟹ Y (o simétrico)</span></div>
+            <div><b>↔ Eliminación:</b> <span className="esquema">X↔Y ⟹ (X→Y) | (Y→X)</span></div>
           </div>
-        </div>
+        </section>
       </div>
       {explainLine === -1 && (
         <DefinitionsModal onClose={()=> setExplainLine(null)} />
@@ -559,10 +570,10 @@ function AxiomPreview({n, α, β, γ, ascii}:{n:1|2|3, α:string, β:string, γ:
     const text = show(inst)
     const displayed = ascii
       ? text.split('¬').join('~').split('∧').join('^').split('∨').join('v').split('↔').join('<->')
-      : text
-    return <div style={{marginTop:8, fontSize:13, background:'#fafafa', padding:8, borderRadius:6}}>Previsualización: {displayed}</div>
+      : text.split('->').join('→')
+    return <div className="previsualizacion">{displayed}</div>
   }catch(e:any){
-    return <div style={{marginTop:8, fontSize:13, color:'#b71c1c'}}>Error: {String(e.message||e)}</div>
+    return <div className="previsualizacion-error">Error: {String(e.message||e)}</div>
   }
 }
 
@@ -575,8 +586,12 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
   onClose: ()=>void,
 }){
   function fmt(s: string){
-    if (!ascii) return s
-    return s.split('¬').join('~').split('∧').join('^').split('∨').join('v').split('↔').join('<->')
+    // normaliza el esquema con el parser propio (los esquemas son fórmulas
+    // válidas); si no parsea (p.ej. texto libre), se muestra tal cual
+    let u = s
+    try{ u = show(parse(s)) }catch{ /* texto libre */ }
+    if (!ascii) return u.split('->').join('→')
+    return u.split('¬').join('~').split('∧').join('^').split('∨').join('v').split('↔').join('<->')
   }
   function ruleSchema(j: Just|undefined): { name: string, schema: string }|null{
     if (!j) return null
@@ -614,41 +629,43 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
   const entail = prem.length>0 ? entails(prem, concl) : { valid: true as const }
 
   return (
-    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
-      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)', maxHeight:'80vh', overflow:'auto'}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-          <h3 style={{margin:0}}>Explicación semántica — L{lineIdx}</h3>
-          <button onClick={onClose}>Cerrar</button>
+    <div className="velo" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-encabezado">
+          <h3 className="modal-titulo">Explicación semántica — L{lineIdx}</h3>
+          <button className="boton" onClick={onClose}>cerrar</button>
         </div>
-        {schemaInfo && (
-          <div style={{marginTop:10}}>
-            <div><b>Regla:</b> {schemaInfo.name}</div>
-            <div><b>Esquema (tautología):</b> {fmt(schemaInfo.schema)} {typeof schemaValid==='boolean' && (
-              <span style={{marginLeft:8, color: schemaValid? '#1b5e20':'#b71c1c'}}>{schemaValid? 'Tautología':'No es tautología'}</span>
-            )}</div>
-            {schemaTable && (
-              <TT table={schemaTable} />
-            )}
-          </div>
-        )}
-        <div style={{marginTop:14}}>
-          <div><b>Este paso:</b> {prem.length>0 ? '¿Premisas ⊨ Conclusión?' : 'Axioma / línea básica'}</div>
-          {prem.length>0 && (
+        <div className="modal-cuerpo">
+          {schemaInfo && (
             <div>
-              <div style={{marginTop:6}}>
-                {entail.valid
-                  ? <span style={{color:'#1b5e20'}}>Válido: no hay contramodelo</span>
-                  : <span style={{color:'#b71c1c'}}>No válido: contramodelo encontrado</span>}
-              </div>
-              {!entail.valid && (entail as any).countermodels && (
-                <div style={{marginTop:6}}>
-                  {(entail as any).countermodels.slice(0,1).map((rho: Record<string, boolean>, i:number)=> (
-                    <div key={i} style={{fontFamily:'monospace'}}>• {Object.entries(rho).map(([k,v])=> `${k}:${v?'T':'F'}`).join('  ')}</div>
-                  ))}
-                </div>
+              <p><b>Regla:</b> {schemaInfo.name}</p>
+              <p><b>Esquema (tautología):</b> <span className="meta-formula">{fmt(schemaInfo.schema)}</span> {typeof schemaValid==='boolean' && (
+                <span className={schemaValid ? 'veredicto-ok' : 'veredicto-error'} style={{marginLeft:8}}>{schemaValid? 'Tautología':'No es tautología'}</span>
+              )}</p>
+              {schemaTable && (
+                <TT table={schemaTable} />
               )}
             </div>
           )}
+          <div style={{marginTop:14}}>
+            <p><b>Este paso:</b> {prem.length>0 ? '¿Premisas ⊨ Conclusión?' : 'Axioma / línea básica'}</p>
+            {prem.length>0 && (
+              <div>
+                <div style={{marginTop:6}}>
+                  {entail.valid
+                    ? <span className="veredicto-ok">Válido: no hay contramodelo</span>
+                    : <span className="veredicto-error">No válido: contramodelo encontrado</span>}
+                </div>
+                {!entail.valid && (entail as any).countermodels && (
+                  <div style={{marginTop:6}}>
+                    {(entail as any).countermodels.slice(0,1).map((rho: Record<string, boolean>, i:number)=> (
+                      <div key={i} className="contramodelo">• {Object.entries(rho).map(([k,v])=> `${k}:${v?'T':'F'}`).join('  ')}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -657,45 +674,45 @@ function SemanticsModal({ascii, lineIdx, getF, just, formula, onClose}:{
 
 function DefinitionsModal({onClose}:{onClose: ()=>void}){
   return (
-    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
-      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)', maxHeight:'80vh', overflow:'auto'}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-          <h3 style={{margin:0}}>Definiciones — Guía 6</h3>
-          <button onClick={onClose}>Cerrar</button>
+    <div className="velo" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-encabezado">
+          <h3 className="modal-titulo">Definiciones — Guía 6</h3>
+          <button className="boton" onClick={onClose}>cerrar</button>
         </div>
-        <div style={{marginTop:12, lineHeight:1.45}}>
-          <div style={{marginBottom:16}}>
-            <h4 style={{margin:'0 0 8px 0', color:'#1976d2'}}>Axiomas</h4>
-            <p style={{margin:'0 0 8px 0'}}>
-              Los <strong>axiomas</strong> son principios fundacionales que se aceptan como 
-              verdades evidentes sobre algún dominio. Constituyen las premisas básicas 
+        <div className="modal-cuerpo">
+          <div>
+            <h4 className="modal-seccion-titulo">Axiomas</h4>
+            <p>
+              Los <strong>axiomas</strong> son principios fundacionales que se aceptan como
+              verdades evidentes sobre algún dominio. Constituyen las premisas básicas
               de un sistema axiomático.
             </p>
-            <p style={{margin:0, opacity:.8, fontSize:13}}>
-              <em>Ejemplos:</em> los cinco axiomas de Euclides para la geometría, 
+            <p className="nota-suave">
+              <em>Ejemplos:</em> los cinco axiomas de Euclides para la geometría,
               o los axiomas de Peano para los números naturales.
             </p>
           </div>
-          <div style={{marginBottom:16}}>
-            <h4 style={{margin:'0 0 8px 0', color:'#1976d2'}}>Teoremas</h4>
-            <p style={{margin:'0 0 8px 0'}}>
-              Los <strong>teoremas</strong> son otras verdades sobre el dominio que se 
-              infieren deductivamente a partir de los axiomas mediante reglas de inferencia. 
-              A su vez, estos teoremas pueden tratarse como premisas en nuevos argumentos 
+          <div>
+            <h4 className="modal-seccion-titulo">Teoremas</h4>
+            <p>
+              Los <strong>teoremas</strong> son otras verdades sobre el dominio que se
+              infieren deductivamente a partir de los axiomas mediante reglas de inferencia.
+              A su vez, estos teoremas pueden tratarse como premisas en nuevos argumentos
               destinados a deducir válidamente nuevos teoremas.
             </p>
-            <p style={{margin:0, opacity:.8, fontSize:13}}>
-              <em>Ejemplo:</em> del axioma 3 de Peano se puede deducir el teorema 
+            <p className="nota-suave">
+              <em>Ejemplo:</em> del axioma 3 de Peano se puede deducir el teorema
               "el cero no tiene antecesor en ℕ".
             </p>
           </div>
           <div>
-            <h4 style={{margin:'0 0 8px 0', color:'#1976d2'}}>Reglas de Inferencia</h4>
-            <p style={{margin:'0 0 8px 0'}}>
-              Las <strong>reglas de inferencia</strong> son patrones válidos de razonamiento 
+            <h4 className="modal-seccion-titulo">Reglas de Inferencia</h4>
+            <p>
+              Las <strong>reglas de inferencia</strong> son patrones válidos de razonamiento
               deductivo que permiten derivar nuevas conclusiones a partir de premisas conocidas.
             </p>
-            <div style={{fontSize:12, fontFamily:'monospace', background:'#f5f5f5', padding:8, borderRadius:4}}>
+            <div className="bloque-mono">
               <div><strong>Modus Ponens:</strong> X → Y, X ⟹ Y</div>
               <div><strong>Modus Tollens:</strong> X → Y, ¬Y ⟹ ¬X</div>
               <div><strong>Silogismo hipotético:</strong> X → Y, Y → Z ⟹ X → Z</div>
@@ -712,21 +729,21 @@ function DefinitionsModal({onClose}:{onClose: ()=>void}){
 
 function TT({table}:{table: ReturnType<typeof truthTable>}){
   const { vars, rows } = table
-  if (vars.length>6) return <div style={{fontSize:12, opacity:.8}}>Tabla omitida por tamaño (demasiadas variables).</div>
+  if (vars.length>6) return <div className="nota-suave">Tabla omitida por tamaño (demasiadas variables).</div>
   return (
-    <div style={{overflowX:'auto', marginTop:8}}>
-      <table style={{borderCollapse:'collapse', fontFamily:'monospace', fontSize:12}}>
+    <div className="tabla-marco">
+      <table className="tabla-verdad">
         <thead>
           <tr>
-            {vars.map(v=> <th key={v} style={{border:'1px solid #ddd', padding:'2px 6px'}}>{v}</th>)}
-            <th style={{border:'1px solid #ddd', padding:'2px 6px'}}>φ</th>
+            {vars.map(v=> <th key={v}>{v}</th>)}
+            <th>φ</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r,i)=> (
             <tr key={i}>
-              {vars.map(v=> <td key={v} style={{border:'1px solid #eee', textAlign:'center', padding:'2px 6px'}}>{r.valuation[v]?'T':'F'}</td>)}
-              <td style={{border:'1px solid #eee', textAlign:'center', padding:'2px 6px'}}>{r.values[0]?'T':'F'}</td>
+              {vars.map(v=> <td key={v}>{r.valuation[v]?'T':'F'}</td>)}
+              <td>{r.values[0]?'T':'F'}</td>
             </tr>
           ))}
         </tbody>

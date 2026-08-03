@@ -1,28 +1,59 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ProofEditor from './components/ProofEditor'
 import exercises from './exercises.json'
+
+function temaInicial(): 'dark'|'light' {
+  try{
+    const g = localStorage.getItem('axiom:tema')
+    if (g==='dark' || g==='light') return g
+  }catch{ /* sin storage */ }
+  if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return 'light'
+  return 'dark'
+}
 
 export default function App(){
   const [aboutOpen, setAboutOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [tema, setTema] = useState<'dark'|'light'>(temaInicial)
+
+  useEffect(()=>{
+    document.documentElement.dataset.theme = tema
+  }, [tema])
+
+  function alternarTema(){
+    setTema(t => {
+      const nuevo = t==='dark' ? 'light' : 'dark'
+      try{ localStorage.setItem('axiom:tema', nuevo) }catch{ /* sin storage */ }
+      return nuevo
+    })
+  }
+
   return (
-    <div className="app-container" style={{maxWidth:1000, margin:'24px auto', padding:16}}>
-      <header style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
-        <h1 style={{margin:0}}>Sistemas Axiomáticos: Introducción a la ciencia - C094 - C095</h1>
-        <div style={{display:'flex', alignItems:'center', gap:8}}>
-          <button onClick={()=> setTutorialOpen(true)}>Tutorial</button>
-          <button onClick={()=> setAboutOpen(true)}>Acerca</button>
-          <a href="https://github.com/msantelli/axiom-mvp" target="_blank" rel="noreferrer">Repositorio</a>
-          <a href="https://github.com/ariroffe/logics" target="_blank" rel="noreferrer">logics (opcional)</a>
+    <div className="contenedor">
+      <header className="topbar">
+        <div>
+          <h1 className="wordmark"><span className="wordmark-simbolo">⊢</span>sistemas axiomáticos</h1>
+          <p className="subtitulo">práctica de demostraciones · introducción a la ciencia · c094 · c095</p>
+        </div>
+        <div className="topbar-derecha">
+          <button className="boton-plano" type="button" onClick={alternarTema} aria-label="Cambiar tema">
+            {tema==='dark' ? 'claro' : 'oscuro'}
+          </button>
+          <button className="boton-plano" type="button" onClick={()=> setTutorialOpen(true)}>tutorial</button>
+          <button className="boton-plano" type="button" onClick={()=> setAboutOpen(true)}>acerca</button>
+          <a className="boton-plano" href="https://github.com/msantelli/axiom-mvp" target="_blank" rel="noreferrer">repositorio</a>
+          <a className="boton-plano" href="https://github.com/ariroffe/logics" target="_blank" rel="noreferrer">logics</a>
         </div>
       </header>
-      <p style={{opacity:.8}}>Elegí reglas y líneas para construir la demostración paso a paso. Las líneas se numeran como en papel.</p>
+      <p className="intro">Elegí reglas y líneas para construir la demostración paso a paso. Las líneas se numeran como en papel.</p>
       <ProofEditor />
-      <hr style={{margin:'24px 0'}}/>
-      <details>
-        <summary>Banco de ejercicios (JSON)</summary>
+      <details className="banco">
+        <summary>banco de ejercicios (json)</summary>
         <pre>{JSON.stringify(exercises, null, 2)}</pre>
       </details>
+      <footer className="pie">
+        <p>hecho por mauro santelli (uba · iif-sadaf [conicet] · udesa) · introducción a la ciencia, c094 y c095 · <a href="https://github.com/ariroffe/logics" target="_blank" rel="noreferrer">logics</a> de Ariel Roffé como referencia</p>
+      </footer>
       {tutorialOpen && <TutorialModal onClose={()=> setTutorialOpen(false)} />}
       {aboutOpen && <AboutModal onClose={()=> setAboutOpen(false)} />}
     </div>
@@ -31,14 +62,14 @@ export default function App(){
 
 function TutorialModal({onClose}:{onClose: ()=>void}){
   return (
-    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
-      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)', maxHeight:'80vh', overflow:'auto'}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12}}>
-          <h3 style={{margin:0}}>Tutorial rápido</h3>
-          <button onClick={onClose}>Cerrar</button>
+    <div className="velo" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-encabezado">
+          <h3 className="modal-titulo">Tutorial rápido</h3>
+          <button className="boton" onClick={onClose}>cerrar</button>
         </div>
-        <div style={{marginTop:12, lineHeight:1.6}}>
-          <ol style={{paddingLeft:18}}>
+        <div className="modal-cuerpo">
+          <ol>
             <li>Elegí un ejercicio desde el selector superior e identificá la meta y las premisas dadas.</li>
             <li>Revisá las reglas permitidas indicadas en la tarjeta “Demostración”. Activá una regla y luego marcá las líneas que requiere.</li>
             <li>Confirmá con “Agregar línea” (o Enter). Cada línea nueva queda numerada, con su justificación y referencias.</li>
@@ -57,18 +88,18 @@ function TutorialModal({onClose}:{onClose: ()=>void}){
 
 function AboutModal({onClose}:{onClose: ()=>void}){
   return (
-    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}} onClick={onClose}>
-      <div style={{background:'#fff', padding:16, borderRadius:8, width:'min(720px, 96vw)'}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-          <h3 style={{margin:0}}>Acerca de esta app</h3>
-          <button onClick={onClose}>Cerrar</button>
+    <div className="velo" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-encabezado">
+          <h3 className="modal-titulo">Acerca de esta app</h3>
+          <button className="boton" onClick={onClose}>cerrar</button>
         </div>
-        <div style={{marginTop:8, lineHeight:1.45}}>
-          <p style={{margin:'6px 0'}}><b>Autor:</b> Mauro Santelli (UBA - IIF-SADAF[CONICET] - Profesor invitado UDESA).</p>
-          <p style={{margin:'6px 0'}}>App para uso de la materia <i>Introducción a la ciencia</i> (C094 y C095).</p>
-          <p style={{margin:'6px 0'}}><b>Profesores de Magistrales:</b> Sergio Barberis, Aníbal Szapiro, Mauro Santelli, Tomás Balmaceda, Andrea Melamed, Nicolás Serrano.</p>
-          <p style={{margin:'6px 0'}}><b>Profesores de tutoriales:</b> Maximiliano Zeller, Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky.</p>
-          <p style={{margin:'12px 0 0 0', opacity:.8}}>Diseñada y prototipada con OpenAI Codex y Claude Code.</p>
+        <div className="modal-cuerpo">
+          <p><b>Autor:</b> Mauro Santelli (UBA - IIF-SADAF[CONICET] - Profesor invitado UDESA).</p>
+          <p>App para uso de la materia <i>Introducción a la ciencia</i> (C094 y C095).</p>
+          <p><b>Profesores de Magistrales:</b> Sergio Barberis, Aníbal Szapiro, Mauro Santelli, Tomás Balmaceda, Andrea Melamed, Nicolás Serrano.</p>
+          <p><b>Profesores de tutoriales:</b> Maximiliano Zeller, Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky.</p>
+          <p className="nota-suave" style={{marginTop:12}}>Diseñada y prototipada con OpenAI Codex y Claude Code.</p>
         </div>
       </div>
     </div>

@@ -36,6 +36,7 @@ export function parse(input: string): F {
   function parseImp(): F {
     let left = parseOr()
     if (s.slice(i, i+2) === '->') { i+=2; const right = parseImp(); return {kind:'imp', left, right} }
+    if (peek()==='→'){ eat(); const right = parseImp(); return {kind:'imp', left, right} }
     return left
   }
   function parseOr(): F {

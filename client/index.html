@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistemas Axiomáticos — MVP</title>
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="author" content="Mauro Santelli" />
+    <title>⊢ sistemas axiomáticos — práctica de demostraciones</title>
+    <script>
+      // aplica el tema guardado antes del primer paint, para evitar el flash
+      try {
+        var t = localStorage.getItem('axiom:tema');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch (e) { /* sin storage */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>
