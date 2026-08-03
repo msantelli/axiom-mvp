@@ -95,10 +95,10 @@ function AboutModal({onClose}:{onClose: ()=>void}){
           <button className="boton" onClick={onClose}>cerrar</button>
         </div>
         <div className="modal-cuerpo">
-          <p><b>Autor:</b> Mauro Santelli (UBA - IIF-SADAF[CONICET] - Profesor invitado UDESA).</p>
+          <p><b>Autor:</b> <a href="https://maurosantelli.com.ar" target="_blank" rel="noreferrer">Mauro Santelli</a> (UBA - IIF-SADAF[CONICET] - Profesor invitado UDESA).</p>
           <p>App para uso de la materia <i>Introducción a la ciencia</i> (C094 y C095).</p>
-          <p><b>Profesores de Magistrales:</b> Sergio Barberis, Aníbal Szapiro, Mauro Santelli, Tomás Balmaceda, Andrea Melamed, Nicolás Serrano.</p>
-          <p><b>Profesores de tutoriales:</b> Maximiliano Zeller, Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky.</p>
+          <p><b>Profesores:</b> Aníbal Szapiro, Tomás Balmaceda, Sergio Barberis, Andrea Melamed, Mauro Santelli, Nicolás Serrano, Virginia Ketzelman y Christián Carman.</p>
+          <p><b>Tutores:</b> Ignacio Madroñal, Marcos Travaglia, Dalila Serebrinsky, Jonathan Erenfryd, Paula Villafañe, Marina Melantoni, Alejandro Petrone, Luciana Espinosa y Alejandro Zárate.</p>
           <p className="nota-suave" style={{marginTop:12}}>Diseñada y prototipada con OpenAI Codex y Claude Code.</p>
         </div>
       </div>
